@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  
+  --color-background: #0a0a0c;
+  --color-card: rgba(255, 255, 255, 0.03);
+  --color-border: rgba(255, 255, 255, 0.08);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  --foreground: #ffffff;
+  --secondary: #94a3b8;
+  --muted: #64748b;
+  
+  /* RAG Status Colors */
+  --status-red: #ef4444;
+  --status-amber: #f59e0b;
+  --status-green: #10b981;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Premium Utilities */
+@layer utilities {
+  .glass-card {
+    @apply bg-card backdrop-blur-md border border-border rounded-2xl transition-all duration-300;
+  }
+  
+  .glass-card:hover {
+    @apply border-white/20 bg-white/5;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-linear-to-br from-white to-white/40;
+  }
+
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .status-red { background-color: var(--status-red); box-shadow: 0 0 10px var(--status-red); }
+  .status-amber { background-color: var(--status-amber); box-shadow: 0 0 10px var(--status-amber); }
+  .status-green { background-color: var(--status-green); box-shadow: 0 0 10px var(--status-green); }
+
+  .shadow-glow {
+    box-shadow: 0 0 40px -10px rgba(59, 130, 246, 0.2);
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
