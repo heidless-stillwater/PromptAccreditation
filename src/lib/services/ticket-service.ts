@@ -1,6 +1,25 @@
 import { accreditationDb } from '../firebase-admin';
 import { Ticket, TicketStatus, TimelineEntry, RemediationType } from '../types';
 import { AuditService } from './audit-service';
+import { Timestamp } from 'firebase-admin/firestore';
+
+/**
+ * Sanitize Firestore data for RSC (Server Components).
+ */
+function sanitize<T>(data: T): T {
+  if (data === null || data === undefined) return data;
+  if (data instanceof Timestamp) return (data.toDate().toISOString() as unknown) as T;
+  if (data instanceof Date) return (data.toISOString() as unknown) as T;
+  if (Array.isArray(data)) return data.map(sanitize) as unknown as T;
+  if (typeof data === 'object') {
+    const obj = { ...data } as any;
+    for (const key in obj) {
+      obj[key] = sanitize(obj[key]);
+    }
+    return obj;
+  }
+  return data;
+}
 
 export const TicketService = {
   async createTicket(data: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
@@ -35,7 +54,7 @@ export const TicketService = {
       .where('status', 'in', ['open', 'in_progress'])
       .orderBy('createdAt', 'desc')
       .get();
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Ticket));
+    return sanitize(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Ticket)));
   },
 
   async getResolvedTickets(): Promise<Ticket[]> {
@@ -45,13 +64,13 @@ export const TicketService = {
       .orderBy('updatedAt', 'desc')
       .limit(20)
       .get();
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Ticket));
+    return sanitize(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Ticket)));
   },
 
   async getTicketById(id: string): Promise<Ticket | null> {
     const doc = await accreditationDb.collection('tickets').doc(id).get();
     if (!doc.exists) return null;
-    return { id: doc.id, ...doc.data() } as Ticket;
+    return sanitize({ id: doc.id, ...doc.data() } as Ticket);
   },
 
   async getTicketsByPolicy(policyId: string): Promise<Ticket[]> {
@@ -60,7 +79,7 @@ export const TicketService = {
       .where('policyId', '==', policyId)
       .orderBy('createdAt', 'desc')
       .get();
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Ticket));
+    return sanitize(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Ticket)));
   },
 
   async updateTicketStatus(id: string, status: TicketStatus, actor = 'system'): Promise<void> {
@@ -125,7 +144,13 @@ export const TicketService = {
       .get();
 
     if (!existing.empty) {
-      console.log(`[TicketService] Duplicate suppressed for checkId: ${data.checkId}`);
+      const ticketId = existing.docs[0].id;
+      console.log(`[TicketService] Duplicate detected for ${data.checkId}. Updating fixId...`);
+      console.log(`[TicketService] Force-patching ticket ${ticketId} with fixId: ${data.remediation.fixId}`);
+      await accreditationDb.collection('tickets').doc(ticketId).update({
+        'remediation.fixId': data.remediation.fixId,
+        updatedAt: new Date()
+      });
       return null;
     }
     return this.createTicket(data);

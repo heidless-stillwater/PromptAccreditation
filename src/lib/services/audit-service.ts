@@ -1,5 +1,7 @@
 import { accreditationDb } from '../firebase-admin';
 import { AuditLogEntry } from '../types';
+import fs from 'fs/promises';
+import path from 'path';
 
 export const AuditService = {
   /**
@@ -51,5 +53,16 @@ export const AuditService = {
       .orderBy('timestamp', 'asc')
       .get();
     return snap.docs.map((d) => ({ id: d.id, ...d.data() } as AuditLogEntry));
+  },
+  /**
+   * Fetch the content of our persistent shadow log.
+   */
+  async getLastOperationResults(): Promise<string> {
+    try {
+      const filePath = path.join(process.cwd(), 'docs', 'LAST_OPERATION_RESULTS.md');
+      return await fs.readFile(filePath, 'utf-8');
+    } catch (e) {
+      return '# No active instructions found. \nReady for new tasks.';
+    }
   },
 };

@@ -1,110 +1,173 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Clock, AlertTriangle, ShieldCheck, Info } from 'lucide-react';
-import { PolicyService } from '@/lib/services/policy-service';
-import { EvidenceUploader } from '@/components/evidence-uploader';
-import { FixButton } from '@/components/fix-button';
+import Link from 'next/link';
+import { ChevronLeft, TicketCheck, Calendar, User, Clock, Shield, Zap, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { TicketService } from '@/lib/services/ticket-service';
+import { FixButton } from '@/components/shared/fix-button';
+import { format } from 'date-fns';
+import type { Metadata } from 'next';
 
-interface Params {
-  params: Promise<{
-    id: string;
-  }>;
+interface Props {
+  params: Promise<{ id: string }>;
 }
 
-export default async function TicketDetail({ params }: Params) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const ticket = await PolicyService.getTicketById(id);
+  const ticket = await TicketService.getTicketById(id);
+  return { title: ticket?.title || 'Ticket Details' };
+}
 
-  if (!ticket) {
-    return notFound();
-  }
+export default async function TicketDetailPage({ params }: Props) {
+  const { id } = await params;
+  const ticket = await TicketService.getTicketById(id);
+  if (!ticket) notFound();
 
-  const isResolved = ticket.status === 'resolved';
+  const isResolved = ticket.status === 'resolved' || ticket.status === 'wont_fix';
 
   return (
-    <main className="min-h-screen p-8 max-w-4xl mx-auto pb-24">
-      {/* Navigation */}
-      <div className="mb-8 flex justify-between items-center">
-        <Link href="/tickets" className="text-secondary hover:text-white flex items-center gap-2 text-sm transition-colors group">
-          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Tickets
-        </Link>
-        <span className={`text-[10px] font-mono uppercase px-3 py-1 rounded-full border
-          ${isResolved ? 'border-success text-success bg-success/5' : 'border-amber-500 text-amber-500 bg-amber-500/5'}`}>
-          {ticket.status}
-        </span>
-      </div>
+    <main className="p-8 max-w-5xl mx-auto animate-fade-in">
+      <Link href="/tickets" className="flex items-center gap-2 text-sm mb-8 hover:underline" style={{ color: 'var(--secondary)' }}>
+        <ChevronLeft size={14} />
+        Back to Inbox
+      </Link>
 
-      <header className="mb-12">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 rounded-lg bg-white/5 border border-white/10">
-            <AlertTriangle className={isResolved ? 'text-success' : 'text-amber-500'} size={20} />
-          </div>
-          <h1 className="text-3xl font-bold">{ticket.title}</h1>
-        </div>
-        
-        <div className="flex flex-wrap gap-4 text-xs font-mono text-muted mb-8">
-          <div className="flex items-center gap-1">
-            <Clock size={12} /> Registered: {new Date(ticket.createdAt).toLocaleString()}
-          </div>
-          <div className="flex items-center gap-1">
-            <Info size={12} /> Priority: <span className="text-white">{ticket.priority.toUpperCase()}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <ShieldCheck size={12} /> Policy: <span className="text-primary">{ticket.policyId}</span>
-          </div>
-        </div>
-
-        <section className="glass-card p-8 mb-8 border-l-4 border-l-primary/30">
-          <h2 className="text-sm font-bold uppercase tracking-widest text-muted mb-4">Diagnostic Overview</h2>
-          <p className="text-secondary leading-relaxed">
-            {ticket.description}
-          </p>
-        </section>
-
-        {!isResolved && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <section className="space-y-4">
-              <h2 className="text-sm font-bold uppercase tracking-widest text-muted">Automated Resolution</h2>
-              <div className="glass-card p-6 bg-primary/5 border-primary/20">
-                <p className="text-xs text-secondary mb-4">Trigger the Active Controller to execute the predefined remediation strategy for this check.</p>
-                <FixButton ticketId={ticket.id} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column: Main Detail */}
+        <div className="lg:col-span-2 space-y-6">
+          <header className="mb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <span className={`badge-${(ticket.status || 'open') === 'open' ? 'red' : (ticket.status || 'open') === 'in_progress' ? 'amber' : 'green'}`}>
+                {(ticket.status || 'open').replace('_', ' ')}
+              </span>
+              <span className="text-[11px] font-mono tracking-wider opacity-60 uppercase">
+                {ticket.id.slice(0, 8)} // {(ticket.type || 'compliance_gap').replace('_', ' ')}
+              </span>
+            </div>
+            <h1 className="text-3xl font-bold mb-4">{ticket.title}</h1>
+            <div className="flex flex-wrap gap-6 text-sm" style={{ color: 'var(--secondary)' }}>
+              <div className="flex items-center gap-2">
+                <Shield size={16} className="text-blue-500" />
+                <span>Policy: <Link href={`/policies/${ticket.policySlug}`} className="text-blue-400 hover:underline">{ticket.policySlug}</Link></span>
               </div>
-            </section>
-
-            <section className="space-y-4">
-              <h2 className="text-sm font-bold uppercase tracking-widest text-muted">Manual Resolution</h2>
-              <EvidenceUploader ticketId={ticket.id} />
-            </section>
-          </div>
-        )}
-
-        {isResolved && (
-          <section className="glass-card p-8 bg-success/5 border-success/20">
-            <h2 className="text-sm font-bold uppercase tracking-widest text-success mb-4 flex items-center gap-2">
-              <ShieldCheck size={18} /> Resolution Evidence
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-[10px] font-mono text-muted uppercase mb-1">Evidence Provided</label>
-                <div className="text-sm text-white font-mono break-all bg-white/5 p-3 rounded-lg border border-white/5">
-                  {ticket.evidenceUrl || 'Automated Remediation (No manual evidence required)'}
-                </div>
-              </div>
-              {ticket.notes && (
-                <div>
-                  <label className="block text-[10px] font-mono text-muted uppercase mb-1">Resolution Notes</label>
-                  <div className="text-sm text-secondary bg-white/5 p-3 rounded-lg border border-white/5">
-                    {ticket.notes}
-                  </div>
-                </div>
-              )}
-              <div className="text-[10px] text-muted text-right">
-                Resolved on {new Date(ticket.updatedAt).toLocaleString()}
+              <div className="flex items-center gap-2">
+                <Calendar size={16} />
+                <span>Raised {ticket.createdAt ? format(new Date(ticket.createdAt), 'MMM dd, HH:mm') : 'Unknown'}</span>
               </div>
             </div>
-          </section>
-        )}
-      </header>
+          </header>
+
+          <div className="glass-card p-6">
+            <h2 className="text-lg font-bold mb-4">Description</h2>
+            <p className="text-slate-400 leading-relaxed whitespace-pre-wrap">{ticket.description}</p>
+          </div>
+
+          <div className="glass-card p-6">
+            <h2 className="text-lg font-bold mb-6">Timeline</h2>
+            <div className="space-y-6">
+              {(ticket.timeline || []).map((entry, idx) => (
+                <div key={idx} className="relative pl-8">
+                  {idx !== ticket.timeline.length - 1 && (
+                    <div className="absolute left-[7px] top-5 bottom-0 w-[1px] bg-white/5" />
+                  )}
+                  <div className="absolute left-0 top-1 w-[15px] h-[15px] rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                    <div className="w-[5px] h-[5px] rounded-full bg-blue-500" />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-bold">{entry.action}</span>
+                      <span className="text-xs opacity-50 font-mono">
+                        {entry.timestamp ? format(new Date(entry.timestamp), 'HH:mm:ss') : ''}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-2">By {entry.actor}</p>
+                    {entry.details && (
+                      <div className="p-3 rounded-lg bg-black/30 border border-white/5 text-xs text-slate-400 font-mono">
+                        {entry.details}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Sidebar */}
+        <div className="space-y-6">
+          <div className="glass-card p-6">
+            <h2 className="text-sm font-bold tracking-widest uppercase mb-6 opacity-60">Status Control</h2>
+            
+            <div className="space-y-4 mb-8">
+              <div className="flex justify-between items-center text-sm">
+                <span style={{ color: 'var(--secondary)' }}>Priority</span>
+                <span className={`font-bold ${(ticket.priority || 'medium') === 'critical' ? 'text-red-500' : (ticket.priority || 'medium') === 'high' ? 'text-orange-500' : 'text-blue-500'}`}>
+                  {(ticket.priority || 'medium').toUpperCase()}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span style={{ color: 'var(--secondary)' }}>Severity</span>
+                <span className="font-bold">{(ticket.severity || 'major').toUpperCase()}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span style={{ color: 'var(--secondary)' }}>Assignee</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center">
+                    <User size={12} className="text-blue-400" />
+                  </div>
+                  <span className="font-bold">{ticket.assignee || 'Unassigned'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {!isResolved && ticket.remediation.type === 'active_fix' && (
+                <FixButton ticketId={ticket.id} fixId={ticket.remediation.fixId} />
+              )}
+              {!isResolved && (
+                <button className="btn-ghost w-full justify-center">
+                  Close as Won't Fix
+                </button>
+              )}
+              {isResolved && (
+                <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-center">
+                  <CheckCircle2 size={24} className="mx-auto mb-2 text-green-500" />
+                  <p className="text-sm font-bold text-green-400">Resolved</p>
+                  <p className="text-[10px] text-green-500/60 font-mono mt-1">
+                    {ticket.remediation.resolvedAt ? format(new Date(ticket.remediation.resolvedAt), 'yyyy-MM-dd HH:mm') : ''}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="glass-card p-6">
+            <h2 className="text-sm font-bold tracking-widest uppercase mb-4 opacity-60">Affected Assets</h2>
+            <div className="space-y-2">
+              {(ticket.affectedApps || []).map(app => (
+                <div key={app} className="flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/5">
+                  <Zap size={14} className="text-amber-400" />
+                  <span className="text-xs font-mono">{app}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-blue-500/5 border border-blue-500/10">
+            <div className="flex items-start gap-3">
+              <AlertCircle size={18} className="text-blue-500 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-blue-400 mb-1">Knowledge Link</p>
+                <p className="text-[11px] text-blue-500/70 leading-relaxed mb-3">
+                  This issue is linked to the <strong>{ticket.policySlug}</strong> compliance handbook. 
+                  Ask the Policy AI for more specific remediation steps.
+                </p>
+                <Link href="/knowledge/chat" className="text-[10px] font-bold text-blue-400 flex items-center gap-1 hover:underline">
+                  Open Policy AI Chat
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

@@ -29,6 +29,8 @@ export interface ImplementationStep {
   estimatedMinutes?: number;
   dependsOn?: string[];
   status: WizardStepStatus;
+  draftable?: boolean;
+  relatedCheckId?: string;
 }
 
 export interface AuditCheck {
@@ -40,7 +42,7 @@ export interface AuditCheck {
   probeId?: string;
   targetApp: string;
   targetDb?: string;
-  evidenceUrl?: string;
+  evidenceUrl?: string | null;
   lastChecked: Date | null;
   nextDue?: Date | null;
   notes?: string;
@@ -92,7 +94,7 @@ export interface Ticket {
   remediation: {
     type: RemediationType;
     fixId?: string;
-    evidenceUrl?: string;
+    evidenceUrl?: string | null;
     notes?: string;
     resolvedBy?: string;
     resolvedAt?: Date | null;
@@ -140,6 +142,7 @@ export interface KBChunk {
   content: string;
   pageRef?: string;
   embedding?: number[];
+  docTitle?: string;
 }
 
 export interface KBDocument {
@@ -151,6 +154,7 @@ export interface KBDocument {
   chunks?: KBChunk[];
   pageCount?: number;
   uploadedBy: string;
+  chunkCount?: number;
   uploadedAt: Date | null;
   updatedAt: Date | null;
 }
@@ -182,6 +186,8 @@ export interface WizardState {
   currentStepIndex: number;
   stepsCompleted: string[];
   evidenceUploaded: Record<string, string>;
+  checklistsUploaded: Record<string, string>;
+  checklistProgress: Record<string, boolean[]>;
   startedAt: Date | null;
   lastActivityAt: Date | null;
   completedAt?: Date | null;
@@ -195,7 +201,7 @@ export interface AuditLogEntry {
   id: string;
   action: string;
   actor: string;
-  targetType: 'policy' | 'ticket' | 'check' | 'config' | 'scan';
+  targetType: 'policy' | 'ticket' | 'check' | 'config' | 'scan' | 'remediation' | 'policy_check';
   targetId: string;
   details: Record<string, unknown>;
   timestamp: Date | null;

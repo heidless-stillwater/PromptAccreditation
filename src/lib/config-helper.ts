@@ -1,7 +1,7 @@
 import { globalDb } from './firebase-admin';
 import { decrypt } from './crypto';
 
-const CACHE_TTL = 5 * 60 * 1000; // 5 minute cache
+const CACHE_TTL = 1000; // 1 second cache for testing propagation
 const secretCache: Record<string, { value: string; expires: number }> = {};
 
 /**
@@ -16,18 +16,26 @@ export async function getSecret(key: string): Promise<string | undefined> {
         return secretCache[key].value;
     }
 
+    console.log(`[ConfigHub] Syncing secret: ${key}...`);
+
     try {
-        // 2. Fetch from Firestore (Default DB -> system_config/global_secrets)
-        const doc = await globalDb.collection('system_config').doc('global_secrets').get();
+        // Fetch from PromptTool Hub (prompttool-db-0 -> system_config/global_secrets)
+        const { toolDb } = await import('./firebase-admin');
+        const doc = await toolDb.collection('system_config').doc('global_secrets').get();
         
         if (doc.exists) {
             const data = doc.data();
             const encryptedValue = data?.[key];
 
             if (encryptedValue && typeof encryptedValue === 'string') {
+                console.log(`[ConfigHub] Found encrypted value for ${key}. Decrypting...`);
                 // 3. Decrypt
                 const decrypted = decrypt(encryptedValue);
                 
+                if (decrypted) {
+                    console.log(`[ConfigHub] SUCCESS: Decrypted ${key} (Length: ${decrypted.length})`);
+                }
+
                 // 4. Update Cache
                 secretCache[key] = {
                     value: decrypted,
@@ -35,12 +43,20 @@ export async function getSecret(key: string): Promise<string | undefined> {
                 };
 
                 return decrypted;
+            } else {
+                console.warn(`[ConfigHub] FAILED: Key ${key} not found in Firestore doc.`);
             }
+        } else {
+            console.error('[ConfigHub] FAILED: Master global_secrets document missing from Firestore.');
         }
     } catch (error) {
-        console.warn(`[ConfigHelper] Failed to fetch secret [${key}] from Firestore:`, error);
+        console.error(`[ConfigHub] CRITICAL ERROR fetching secret [${key}]:`, error);
     }
 
     // 5. Final Fallback to process.env
-    return process.env[key];
+    const fallback = process.env[key];
+    if (fallback) {
+        console.log(`[ConfigHub] Falling back to local process.env for ${key}`);
+    }
+    return fallback;
 }

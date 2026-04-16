@@ -1,6 +1,22 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
+/* ═══════════════════════════════════════════════════════
+   TYPOGRAPHY CONFIG FOR TAILWIND 4
+═══════════════════════════════════════════════════════ */
+@plugin "@tailwindcss/typography";
+
+/* Extra Prose Branding for Compliance Docs */
+.prose {
+  --tw-prose-headings: var(--color-primary);
+  --tw-prose-links: var(--color-primary-hover);
+  --tw-prose-bold: #ffffff;
+  --tw-prose-bullets: var(--color-primary);
+  --tw-prose-quotes: var(--secondary);
+  --tw-prose-code: #93c5fd;
+  --tw-prose-pre-bg: rgba(0,0,0,0.5);
+  --tw-prose-tr-border: rgba(255,255,255,0.1);
+  --tw-prose-th-bg: rgba(255,255,255,0.05);
+}
 /* ═══════════════════════════════════════════════════════
    DESIGN SYSTEM — Premium Control Room
    PromptAccreditation v2.0
@@ -29,7 +45,7 @@
   --color-border-hover: rgba(255, 255, 255, 0.14);
 
   /* ═══ Typography ═══ */
-  --font-sans: 'Inter', var(--font-geist-sans), system-ui, sans-serif;
+  --font-sans: var(--font-inter), var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), 'JetBrains Mono', 'Fira Code', monospace;
 }
 
@@ -413,8 +429,8 @@ body {
   75%, 100% { transform: scale(2); opacity: 0; }
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 @keyframes slideInLeft {
   from { opacity: 0; transform: translateX(-14px); }

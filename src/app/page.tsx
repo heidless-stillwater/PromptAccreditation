@@ -1,158 +1,199 @@
 import Link from 'next/link';
-import { Shield, Lock, AlertTriangle, CheckCircle2, Terminal, ExternalLink, Activity, Info } from 'lucide-react';
+import {
+  Shield, Lock, AlertTriangle, CheckCircle2,
+  Terminal, Activity, ArrowRight, Globe
+} from 'lucide-react';
 import { PolicyService } from '@/lib/services/policy-service';
-import { ScanButton } from '@/components/scan-button';
-import { UpgradeCard } from '@/components/upgrade-card';
+import { AuthService } from '@/lib/services/auth-service';
+import { AuditService } from '@/lib/services/audit-service';
+import { ScanButton } from '@/components/shared/scan-button';
+import { SUITE_APPS } from '@/lib/constants';
+import type { Metadata } from 'next';
 
-export default async function PolicyHub() {
+export const metadata: Metadata = {
+  title: 'Command Centre',
+  description: 'Active Policy Controller — suite-wide governance dashboard',
+};
+
+export default async function CommandCentre() {
+  const user = await AuthService.getCurrentUser();
   const policies = await PolicyService.getAllPolicies();
   const openTickets = await PolicyService.getOpenTickets();
+  const recentLogs = await AuditService.getRecentLogs(10);
 
-  const totalChecks = policies.reduce((acc, p) => acc + (p.checks?.length || 0), 0);
-  const passedChecks = policies.reduce((acc, p) => 
-    acc + (p.checks?.filter(c => c.status === 'green').length || 0), 0
+  const totalChecks = policies.reduce((a, p) => a + (p.checks?.length ?? 0), 0);
+  const passedChecks = policies.reduce(
+    (a, p) => a + (p.checks?.filter((c) => c.status === 'green').length ?? 0),
+    0
   );
-  const complianceRating = totalChecks > 0 ? Math.round((passedChecks / totalChecks) * 100) : 100;
+  const criticalCount = openTickets.filter((t) => t.priority === 'critical').length;
+  const complianceScore = totalChecks > 0 ? Math.round((passedChecks / totalChecks) * 100) : 0;
+
+  const scoreColor =
+    complianceScore >= 80 ? 'var(--status-green)' :
+    complianceScore >= 50 ? 'var(--status-amber)' :
+    'var(--status-red)';
+
+  const tierColor = 
+    user?.tier === 'enterprise' ? '#c084fc' : // Purple
+    user?.tier === 'professional' ? '#60a5fa' : // Blue
+    '#94a3b8'; // Slate
 
   return (
-    <main className="min-h-screen p-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <header className="flex justify-between items-end mb-12">
+    <main className="p-8 max-w-7xl mx-auto min-h-screen animate-fade-in">
+
+      {/* ── Header ── */}
+      <header className="flex justify-between items-end mb-10">
         <div>
-          <h1 className="text-4xl font-bold mb-2">
-            <span className="text-white">Prompt</span>
-            <span className="text-gradient">Accreditation</span>
-          </h1>
-          <p className="text-secondary">App Suite Governance & Active Policy Controller</p>
+          <div className="flex items-center gap-3 mb-2">
+            <Globe size={22} style={{ color: 'var(--color-primary)' }} />
+            <h1 className="text-3xl font-bold tracking-tight">
+              <span style={{ color: 'var(--foreground)' }}>Prompt</span>
+              <span className="text-gradient-primary">Accreditation</span>
+            </h1>
+          </div>
+          <p className="text-sm" style={{ color: 'var(--secondary)' }}>
+            App Suite Governance &amp; Active Policy Controller
+          </p>
         </div>
+        
         <div className="flex flex-col items-end gap-3">
-          <div className="flex gap-4 items-center">
+          {user && (
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex flex-col items-end">
+                <span className="text-xs font-bold text-white leading-tight">{user.displayName || user.email}</span>
+                <span 
+                  className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md border"
+                  style={{ borderColor: `${tierColor}44`, color: tierColor, background: `${tierColor}11` }}
+                >
+                  {user.tier}
+                </span>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-cover border border-white/10" style={{ backgroundImage: `url(${user.photoURL || 'https://www.gravatar.com/avatar?d=mp'})` }} />
+            </div>
+          )}
+          <div className="flex items-center gap-4">
             <ScanButton />
-            <div className="glass-card px-4 py-2 flex items-center gap-2">
-              <Activity className="text-success w-4 h-4 animate-pulse" />
-              <span className="text-sm font-medium">Controller Active</span>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-mono" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)' }}>
+              <Activity size={12} className="animate-pulse" style={{ color: 'var(--status-green)' }} />
+              <span style={{ color: '#34d399' }}>CONTROLLER ACTIVE</span>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Hero Stats */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <div className="glass-card p-6">
-          <div className="flex justify-between items-start mb-4">
-            <Shield className="text-primary w-6 h-6" />
-            <span className="text-xs font-mono text-muted uppercase">Ecosystem Scope</span>
-          </div>
-          <p className="text-2xl font-bold">5 Apps</p>
-          <p className="text-sm text-secondary">Active Monitoring Hub</p>
+      {/* ── Hero KPI Row ── */}
+      <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+        <div className="glass-card p-6 flex flex-col items-center justify-center md:col-span-1 border-t-2" style={{ borderTopColor: scoreColor }}>
+          <div className="text-2xl font-bold mb-1" style={{ color: scoreColor }}>{complianceScore}%</div>
+          <p className="text-[10px] uppercase tracking-widest text-white/40">Compliance</p>
         </div>
-        <div className="glass-card p-6 border-l-4 border-l-amber-500">
-          <div className="flex justify-between items-start mb-4">
-            <AlertTriangle className="text-amber-500 w-6 h-6" />
-            <span className="text-xs font-mono text-muted uppercase">Resolution Center</span>
-          </div>
-          <p className="text-2xl font-bold">{openTickets.length} Tickets</p>
-          <Link href="/tickets" className="text-sm text-secondary underline decoration-amber-500/30 cursor-pointer hover:text-white transition-colors">Pending Compliance Actions</Link>
+        <div className="glass-card p-6 border-l-2 border-l-amber-500/50">
+          <p className="text-2xl font-bold mb-1">{openTickets.length}</p>
+          <p className="text-[10px] uppercase tracking-widest text-white/40">Open Tickets</p>
         </div>
-        <div className="glass-card p-6">
-          <div className="flex justify-between items-start mb-4">
-            <Lock className="text-success w-6 h-6" />
-            <span className="text-xs font-mono text-muted uppercase">Compliance Rating</span>
-          </div>
-          <p className="text-2xl font-bold">{complianceRating}%</p>
-          <p className="text-sm text-secondary items-center flex gap-1">Verified Suite Health <CheckCircle2 size={12} /></p>
+        <div className="glass-card p-6 border-l-2" style={{ borderLeftColor: criticalCount > 0 ? 'var(--status-red)' : 'var(--status-green)' }}>
+          <p className="text-2xl font-bold mb-1">{criticalCount}</p>
+          <p className="text-[10px] uppercase tracking-widest text-white/40">Critical Issues</p>
+        </div>
+        <div className="glass-card p-6 border-l-2 border-l-blue-500/50">
+          <p className="text-2xl font-bold mb-1">{SUITE_APPS.length}</p>
+          <p className="text-[10px] uppercase tracking-widest text-white/40">Apps Monitored</p>
         </div>
       </section>
 
-      {/* Policy Grid */}
-      <section>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            Active Governance Policies
-          </h2>
-          <button className="text-sm text-primary hover:underline flex items-center gap-1 font-medium transition-all">
-            Configuration Dashboard <ExternalLink size={14} />
-          </button>
-        </div>
+      {/* ── Main Dashboard Content ── */}
+      <div className="flex flex-col gap-10">
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {policies.map((policy) => {
-            const totalPolicyChecks = policy.checks?.length || 0;
-            const passedPolicyChecks = policy.checks?.filter(c => c.status === 'green').length || 0;
-            const progress = totalPolicyChecks > 0 ? Math.round((passedPolicyChecks / totalPolicyChecks) * 100) : 0;
+        <section>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <Shield size={18} className="text-blue-400" />
+              Governance Policies
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {policies.map((policy) => {
+              const policyChecks = policy.checks ?? [];
+              
+              // 1. Automated Probes (Technical Status)
+              const probes = policyChecks.filter(c => c.category === 'automated' || c.category === 'hybrid' || !!c.probeId);
+              const probesPassed = probes.filter(c => c.status === 'green').length;
+              const probesTotal = probes.length;
+              const techPercent = probesTotal > 0 ? Math.round((probesPassed / probesTotal) * 100) : 0;
+              const techStatus = probesTotal > 0 && probesPassed === probesTotal ? 'green' : policy.status;
 
-            return (
-              <Link href={`/policies/${policy.id}`} key={policy.id} className="glass-card p-6 flex flex-col group cursor-pointer hover:-translate-y-1 transition-all">
-                <div className="flex justify-between items-start mb-4">
-                  <div className={`status-dot status-${policy.status}`} />
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border border-current opacity-70 
-                      ${policy.status === 'red' ? 'text-red-400' : policy.status === 'amber' ? 'text-amber-400' : 'text-green-400'}`}>
-                      {policy.status}
-                    </span>
-                    <Info size={14} className="text-muted group-hover:text-primary transition-colors" />
+              // 2. Manual Accreditation (Governance Progress)
+              const manual = policyChecks.filter(c => c.category === 'manual');
+              const manualDone = manual.filter(c => c.status === 'green').length;
+              const manualTotal = manual.length;
+              const manualPercent = manualTotal > 0 ? Math.round((manualDone / manualTotal) * 100) : 0;
+
+              return (
+                <Link key={policy.id} href={`/policies/${policy.slug}`} className="glass-card p-5 group hover:border-blue-500/40 transition-colors">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className={`badge-${techStatus} text-[10px]`}>{techStatus.toUpperCase()}</span>
+                      {manualPercent > 0 && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md border border-white/5 bg-white/5 text-white/60">
+                          {manualDone}/{manualTotal} DOCS
+                        </span>
+                      )}
+                    </div>
+                    <ArrowRight size={14} className="opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
                   </div>
-                </div>
-                
-                <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">{policy.name}</h3>
-                <p className="text-sm text-secondary mb-4 line-clamp-2">
-                  {policy.intensity === 'hard' ? '🛡️ ' : policy.intensity === 'systemic' ? '⚙️ ' : '📄 '}
-                  {policy.definition}
+                  
+                  <h3 className="text-sm font-bold mb-3">{policy.name}</h3>
+                  
+                  <div className="space-y-3">
+                    {/* Automation Track */}
+                    <div>
+                      <div className="flex justify-between items-center text-[9px] text-white/40 mb-1 uppercase tracking-wider font-mono">
+                        <span>Automation Status</span>
+                        <span>{techPercent}% Compliant</span>
+                      </div>
+                      <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                        <div className={`h-full progress-fill-${techStatus}`} style={{ width: `${techPercent}%` }} />
+                      </div>
+                    </div>
+
+                    {/* Governance Track */}
+                    <div>
+                      <div className="flex justify-between items-center text-[9px] text-white/40 mb-1 uppercase tracking-wider font-mono">
+                        <span>Manual Accreditation</span>
+                        <span>{manualPercent}% Ready</span>
+                      </div>
+                      <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500/50" style={{ width: `${manualPercent}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        <section>
+          <div className="console-panel">
+            <div className="console-header">
+              <Terminal size={12} className="text-white/40" />
+              <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Live Audit Stream</span>
+            </div>
+            <div className="p-4 space-y-2 text-[11px] font-mono max-h-64 overflow-y-auto custom-scrollbar">
+              {recentLogs.map((log) => (
+                <p key={log.id}>
+                  <span className={`console-log-${log.action.includes('fail') || log.action.includes('error') ? 'err' : 'ok'}`}>
+                    [{log.action.toUpperCase()}]
+                  </span>{" "}
+                  <span className="text-white/50">{log.targetType}: {log.targetId} — {new Date(log.timestamp || Date.now()).toLocaleTimeString()}</span>
                 </p>
-                
-                <div className="mt-auto pt-4 border-t border-white/5">
-                  <div className="flex justify-between text-xs mb-2">
-                    <span className="text-muted">Dial: <span className="text-primary-hover uppercase font-mono">{policy.intensity}</span></span>
-                    <span className="text-white font-mono">{progress}%</span>
-                  </div>
-                  <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full transition-all duration-1000 ${policy.status === 'red' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : policy.status === 'amber' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-green-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'}`} 
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-
-          <div className="glass-card p-6 border-dashed border-white/10 flex flex-col items-center justify-center text-muted hover:text-white hover:border-white/30 transition-all group">
-            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center mb-3 group-hover:bg-primary/20 group-hover:text-primary transition-all">
-              <CheckCircle2 size={24} />
+              ))}
             </div>
-            <span className="text-sm font-medium">Register New Policy</span>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* SaaS Upgrade Section */}
-      <section className="mt-12">
-        <UpgradeCard />
-      </section>
-
-      {/* Controller Log Console */}
-      <section className="mt-12">
-        <div className="glass-card border-none bg-black/40 overflow-hidden shadow-glow">
-          <div className="bg-white/5 px-4 py-2 flex items-center justify-between border-b border-white/5">
-            <div className="flex items-center gap-2">
-              <Terminal size={14} className="text-muted" />
-              <span className="text-[10px] font-mono text-muted uppercase tracking-wider">Active Controller v1.0.0-PRO</span>
-            </div>
-            <div className="text-[10px] font-mono text-success">STATUS: INTER-APP LINK ESTABLISHED</div>
-          </div>
-          <div className="p-4 font-mono text-[10px] text-muted space-y-1">
-            <p><span className="text-primary">[SYNC]</span> Pulling configuration from promptaccreditation-db-0...</p>
-            <p><span className="text-success">[OK]</span> Identified {policies.length} governance policies.</p>
-            <p><span className="text-success">[OK]</span> Identified {totalChecks} distinct audit checks across the suite.</p>
-            {openTickets.length > 0 ? (
-              <p><span className="font-bold text-red-500">[WARN]</span> Found {openTickets.length} unresolved compliance tickets.</p>
-            ) : (
-              <p><span className="text-success">[OK]</span> All critical tickets resolved.</p>
-            )}
-            <p className="animate-pulse">_</p>
-          </div>
-        </div>
-      </section>
+      </div>
     </main>
   );
 }

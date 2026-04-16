@@ -28,52 +28,61 @@ export const TIER_FEATURES = {
   },
 } as const;
 
-/**
- * Resolves the user's Accreditation product tier from the global identity store.
- * Admin/SU users always receive 'enterprise'.
- */
-export async function getAccreditationTier(uid: string): Promise<AccreditationTier> {
-  try {
-    const userDoc = await globalDb.collection('users').doc(uid).get();
-    if (!userDoc.exists) return 'free';
-    const data = userDoc.data()!;
+export const EntitlementService = {
+  /**
+   * Resolves the user's Accreditation product tier from the global identity store.
+   * Admin/SU users always receive 'enterprise'.
+   */
+  async getAccreditationTier(uid: string): Promise<AccreditationTier> {
+    try {
+      const userDoc = await globalDb.collection('users').doc(uid).get();
+      if (!userDoc.exists) return 'free';
+      const data = userDoc.data()!;
 
-    // Admins get enterprise
-    if (data.role === 'admin' || data.role === 'su') return 'enterprise';
+      // Admins get enterprise
+      if (data.role === 'admin' || data.role === 'su') return 'enterprise';
 
-    // Check suite subscription
-    const subscriptionObj =
-      data.suiteSubscription ||
-      data.subscriptionMetadata ||
-      (typeof data.subscription === 'object' ? data.subscription : null);
+      // Check suite subscription
+      const subscriptionObj =
+        data.suiteSubscription ||
+        data.subscriptionMetadata ||
+        (typeof data.subscription === 'object' ? data.subscription : null);
 
-    const activeSuites: string[] = subscriptionObj?.activeSuites || [];
+      const activeSuites: string[] = subscriptionObj?.activeSuites || [];
 
-    if (activeSuites.includes('accreditation-enterprise')) return 'enterprise';
-    if (activeSuites.includes('accreditation-professional')) return 'professional';
-    if (activeSuites.includes('accreditation')) return 'professional';
+      if (activeSuites.includes('accreditation-enterprise')) return 'enterprise';
+      if (activeSuites.includes('accreditation-professional')) return 'professional';
+      if (activeSuites.includes('accreditation')) return 'professional';
 
-    return 'free';
-  } catch (err) {
-    console.error('[Entitlements] Failed to resolve tier:', err);
-    return 'free';
+      return 'free';
+    } catch (err) {
+      console.error('[Entitlements] Failed to resolve tier:', err);
+      return 'free';
+    }
+  },
+
+  /** Check if a feature is unlocked for a given tier */
+  hasFeature(
+    tier: AccreditationTier,
+    feature: keyof (typeof TIER_FEATURES)['free']
+  ): boolean {
+    return TIER_FEATURES[tier][feature] as boolean;
+  },
+
+  /** Get readable plan label */
+  getTierLabel(tier: AccreditationTier): string {
+    const labels: Record<AccreditationTier, string> = {
+      free: 'Community',
+      professional: 'Professional',
+      enterprise: 'Enterprise',
+    };
+    return labels[tier];
+  },
+
+  async getUserData(uid: string) {
+    const doc = await globalDb.collection('users').doc(uid).get();
+    if (!doc.exists) return null;
+    const tier = await this.getAccreditationTier(uid);
+    return { ...doc.data(), tier };
   }
-}
-
-/** Check if a feature is unlocked for a given tier */
-export function hasFeature(
-  tier: AccreditationTier,
-  feature: keyof (typeof TIER_FEATURES)['free']
-): boolean {
-  return TIER_FEATURES[tier][feature] as boolean;
-}
-
-/** Get readable plan label */
-export function getTierLabel(tier: AccreditationTier): string {
-  const labels: Record<AccreditationTier, string> = {
-    free: 'Community',
-    professional: 'Professional',
-    enterprise: 'Enterprise',
-  };
-  return labels[tier];
-}
+};
