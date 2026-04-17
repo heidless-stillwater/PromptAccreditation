@@ -99,11 +99,8 @@ A client-side component that:
 4. Sets a session cookie on success
 5. Redirects to the content only after verification
 
-### Config in PromptResources
-The Active Controller will set this config flag when you activate the Hard dial:
-\`\`\`
-system_config/protection: { avEnabled: true, avStrictness: "standard" }
-\`\`\`
+### Active Controller Fix
+Click "Active Fix" to push \`avEnabled: true\` and \`avStrictness: "hard"\` to PromptResources system_config.
 
 ### Verifying
 Use the "Run Check" button to probe PromptResources automatically.`,
@@ -128,6 +125,9 @@ Use the "Run Check" button to probe PromptResources automatically.`,
 2. Automated AI content screening (where applicable)
 3. Human review queue for flagged content
 4. Documented removal SLA (e.g., ≤24h for illegal content)
+
+### Active Controller Fix
+Click "Active Fix" to activate automated flagging and AI screening in PromptResources.
 
 ### Evidence
 Upload your content moderation policy document.`,
@@ -225,6 +225,7 @@ Upload your content moderation policy document.`,
         automatable: false,
         estimatedMinutes: 90,
         status: 'active',
+        draftable: true,
         relatedCheckId: 'probe-data-audit',
       },
       {
@@ -357,6 +358,7 @@ headers: [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeS
         automatedProbeId: 'probe-security-headers',
         estimatedMinutes: 30,
         status: 'active',
+        relatedCheckId: 'probe-security-headers',
       },
       {
         id: 'sec-step-2',
@@ -386,6 +388,7 @@ Click "Active Fix" to push security header config to all apps' system_config/sec
         estimatedMinutes: 45,
         dependsOn: ['sec-step-1'],
         status: 'locked',
+        relatedCheckId: 'probe-security-headers',
       },
       {
         id: 'sec-step-3',
@@ -450,6 +453,103 @@ Upload a screenshot or export of your current firestore.rules for each app.`,
         notes: 'AES-256-GCM secret store confirmed active via config-helper.ts',
       },
     ],
+  },
+  // ────────────────────────────────────────────────────
+  // 4. EU AI ACT (Transparency & Bias) — [PLANNED]
+  // ────────────────────────────────────────────────────
+  {
+    slug: 'eu-ai-act',
+    name: 'EU AI Act (Transparency & Bias)',
+    category: 'safety',
+    regulatoryBody: 'EU AI Office',
+    maxPenalty: '€35M or 7% of global annual turnover',
+    legislativeUrl: 'https://artificialintelligenceact.eu/',
+    status: 'planned',
+    intensity: 'soft',
+    targetApps: ['prompttool'],
+    definition:
+      'The EU AI Act is the first comprehensive legal framework for AI in the world. It follows a risk-based approach, imposing stricter rules on "High-Risk" AI systems. Core requirements include transparency, human oversight, and bias mitigation for generative AI models.',
+    checksAndBalances:
+      'Algorithmic Impact Assessments. Continuous model drift monitoring. Proactive bias detection and mitigation reports. Human-in-the-loop oversight workflows. Automated technical documentation generation.',
+    risksAndConsequences:
+      'Fines up to €35M or 7% of global turnover. Market withdrawal of non-compliant AI systems. Severe reputational damage and exclusion from EU public procurement.',
+    implementationGuide: [
+      {
+        id: 'ai-step-1',
+        order: 1,
+        title: 'Risk Classification',
+        description: 'Classify your AI system under EU AI Act tiers',
+        guidance: 'Determine if your system is Unacceptable, High-Risk, Limited, or Minimal risk.',
+        instructions: 'Evaluate use cases against Annex III. Most PromptTool generations fall under "Limited Risk" requiring transparency.',
+        evidenceRequired: true,
+        automatable: false,
+        status: 'locked',
+      }
+    ],
+    checks: [],
+  },
+  // ────────────────────────────────────────────────────
+  // 5. IP & LICENSING SOVEREIGNTY — [PLANNED]
+  // ────────────────────────────────────────────────────
+  {
+    slug: 'ip-governance',
+    name: 'IP & Licensing Sovereignty',
+    category: 'data',
+    regulatoryBody: 'Internal Governance / WIPO',
+    maxPenalty: 'Civil liability, removal of infringing content',
+    status: 'planned',
+    intensity: 'soft',
+    targetApps: ['promptresources', 'prompttool'],
+    definition:
+      'Ensures that all AI-generated output and training inputs are compliant with global Intellectual Property laws. Covers provenance tracking, licensing attribution, and copyright-safe generation guards.',
+    checksAndBalances:
+      'Training data provenance registry. Output attribution watermarking. Automated licensing audits for third-party LLM providers.',
+    risksAndConsequences:
+      'Copyright infringement lawsuits. Loss of IP rights for generated content. Platform-wide takedown notices.',
+    implementationGuide: [],
+    checks: [],
+  },
+  // ────────────────────────────────────────────────────
+  // 6. SOVEREIGN DATA RESIDENCY — [PLANNED]
+  // ────────────────────────────────────────────────────
+  {
+    slug: 'data-residency',
+    name: 'Sovereign Data Residency',
+    category: 'data',
+    regulatoryBody: 'ICO / Host Jurisdictions',
+    maxPenalty: 'GDPR fines for illegal international transfers',
+    status: 'planned',
+    intensity: 'hard',
+    targetApps: ['promptresources', 'promptmaster'],
+    definition:
+      'Enforces strict geographic boundaries on where personal data is stored and processed. Ensures compliance with "Local Data" requirements for Government and Healthcare sectors.',
+    checksAndBalances:
+      'Geofencing for database shards. Cloud region verification probes. Automated encryption for cross-border transit.',
+    risksAndConsequences:
+      'Immediate suspension of international data transfer agreements. Regulatory fines for jurisdictional leakage.',
+    implementationGuide: [],
+    checks: [],
+  },
+  // ────────────────────────────────────────────────────
+  // 7. AI ACCESSIBILITY (WCAG 2.1) — [PLANNED]
+  // ────────────────────────────────────────────────────
+  {
+    slug: 'accessibility',
+    name: 'AI Accessibility (WCAG 2.1)',
+    category: 'security',
+    regulatoryBody: 'Accessibility Standards Board',
+    maxPenalty: 'Legal action under Equality Acts',
+    status: 'planned',
+    intensity: 'soft',
+    targetApps: ['all'],
+    definition:
+      'Governance framework to ensure that AI-driven interfaces are accessible to all users, including those with disabilities. Aligned with WCAG 2.1 Level AA.',
+    checksAndBalances:
+      'Automated accessibility scanning. Screen reader compatibility checks for AI outputs. High-contrast and keyboard navigation verification.',
+    risksAndConsequences:
+      'Exclusion of user groups. Regulatory audits for digital discrimination. Litigation risks.',
+    implementationGuide: [],
+    checks: [],
   },
 ];
 

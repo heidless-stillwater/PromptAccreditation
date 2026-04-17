@@ -1,4 +1,4 @@
-export type PolicyStatus = 'red' | 'amber' | 'green';
+export type PolicyStatus = 'red' | 'amber' | 'green' | 'planned';
 export type IntensityLevel = 'soft' | 'hard' | 'systemic';
 export type CheckCategory = 'automated' | 'manual' | 'hybrid';
 export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'wont_fix';

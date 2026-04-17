@@ -58,12 +58,14 @@
   --status-red: #ef4444;
   --status-amber: #f59e0b;
   --status-green: #10b981;
+  --status-planned: #8b5cf6;
 
   /* Glow values */
   --glow-primary: rgba(59, 130, 246, 0.18);
   --glow-success: rgba(16, 185, 129, 0.18);
   --glow-danger: rgba(239, 68, 68, 0.18);
   --glow-amber: rgba(245, 158, 11, 0.18);
+  --glow-planned: rgba(139, 92, 246, 0.18);
 }
 
 /* ═══ Base ═══ */
@@ -161,6 +163,10 @@ body {
     background: var(--status-green);
     box-shadow: 0 0 10px var(--status-green), 0 0 4px var(--status-green);
   }
+  .status-planned {
+    background: var(--status-planned);
+    box-shadow: 0 0 10px var(--status-planned), 0 0 4px var(--status-planned);
+  }
 
   /* ── RAG Badges ── */
   .badge-red {
@@ -191,6 +197,18 @@ body {
     background: rgba(16,185,129,0.12);
     color: #34d399;
     border: 1px solid rgba(16,185,129,0.25);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+  }
+  .badge-planned {
+    background: rgba(139,92,246,0.12);
+    color: #a78bfa;
+    border: 1px solid rgba(139,92,246,0.25);
     border-radius: 6px;
     padding: 2px 8px;
     font-size: 10px;
@@ -372,6 +390,7 @@ body {
   .progress-fill-red { background: var(--status-red); box-shadow: 0 0 8px rgba(239,68,68,0.5); }
   .progress-fill-amber { background: var(--status-amber); box-shadow: 0 0 8px rgba(245,158,11,0.5); }
   .progress-fill-green { background: var(--status-green); box-shadow: 0 0 8px rgba(16,185,129,0.5); }
+  .progress-fill-planned { background: var(--status-planned); box-shadow: 0 0 8px rgba(139,92,246,0.5); }
   .progress-fill-primary { background: var(--color-primary); box-shadow: 0 0 8px rgba(59,130,246,0.4); }
 
   /* ── Sidebar ── */

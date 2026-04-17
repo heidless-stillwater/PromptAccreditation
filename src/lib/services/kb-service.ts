@@ -67,12 +67,11 @@ export const KBService = {
     await accreditationDb.collection('kb_documents').doc(docId).set(kbDoc);
 
     const chunkPromises = chunks.map(async (chunk, idx) => {
-      // Generate real vector embedding using specific suite SDK syntax
-      const result = await (genai as any).models.embedContent({
+      const result = await genai.models.embedContent({
         model: MODELS.EMBEDDING,
-        contents: [{ parts: [{ text: chunk }] }]
+        contents: [chunk]
       });
-      const embedding = result.embedding.values;
+      const embedding = result.embeddings?.[0]?.values;
 
       const chunkData: KBChunk = {
         id: `${docId}_chunk_${idx}`,
