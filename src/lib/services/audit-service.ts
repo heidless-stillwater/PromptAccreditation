@@ -23,7 +23,11 @@ export const AuditService = {
       .orderBy('timestamp', 'desc')
       .limit(limit)
       .get();
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as AuditLogEntry));
+    return snap.docs.map((d) => {
+      const data = d.data();
+      const timestamp = data.timestamp?.toDate ? data.timestamp.toDate() : data.timestamp;
+      return { id: d.id, ...data, timestamp } as AuditLogEntry;
+    });
   },
 
   /**
@@ -37,9 +41,20 @@ export const AuditService = {
       .collection('audit_log')
       .where('targetType', '==', targetType)
       .where('targetId', '==', targetId)
-      .orderBy('timestamp', 'desc')
       .get();
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as AuditLogEntry));
+    
+    return snap.docs
+      .map((d) => {
+        const data = d.data();
+        // Serialization Fix: Convert Firestore Timestamp class to serializable Date
+        const timestamp = data.timestamp?.toDate ? data.timestamp.toDate() : data.timestamp;
+        return { id: d.id, ...data, timestamp } as AuditLogEntry;
+      })
+      .sort((a, b) => {
+        const timeA = a.timestamp instanceof Date ? a.timestamp.getTime() : 0;
+        const timeB = b.timestamp instanceof Date ? b.timestamp.getTime() : 0;
+        return timeB - timeA;
+      });
   },
 
   /**

@@ -82,7 +82,18 @@ export const EntitlementService = {
   async getUserData(uid: string) {
     const doc = await globalDb.collection('users').doc(uid).get();
     if (!doc.exists) return null;
+    
+    const data = doc.data()!;
     const tier = await this.getAccreditationTier(uid);
-    return { ...doc.data(), tier };
+    
+    return {
+      uid,
+      email: data.email || '',
+      displayName: data.displayName || null,
+      photoURL: data.photoURL || null,
+      isAdmin: data.isAdmin || false,
+      tier,
+      // We explicitly omit raw 'subscription' or 'subscriptionMetadata' to prevent React render crashes
+    };
   }
 };

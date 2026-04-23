@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { Settings, Shield, CreditCard, User, Bell, LogOut, ChevronRight, Zap } from 'lucide-react';
 import { getSessionUser } from '@/lib/auth';
 import { EntitlementService } from '@/lib/services/entitlements';

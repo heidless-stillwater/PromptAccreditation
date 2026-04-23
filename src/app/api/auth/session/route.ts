@@ -9,15 +9,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'ID Token required' }, { status: 400 });
     }
     
-    const profile = await createSession(idToken);
+    const profile = await createSession(idToken).catch(err => {
+      console.error('[Session_Route] creation error:', err);
+      return { error: err.message || 'Unknown creation error' };
+    });
     
-    if (profile) {
+    if (profile && !('error' in profile)) {
       return NextResponse.json({ success: true, profile });
     } else {
-      return NextResponse.json({ error: 'Session creation failed' }, { status: 500 });
+      const errorMsg = profile && 'error' in profile ? profile.error : 'Session creation failed';
+      return NextResponse.json({ error: errorMsg }, { status: 500 });
     }
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error?.message || 'Server crash' }, { status: 500 });
   }
 }
 

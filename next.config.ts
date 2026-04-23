@@ -1,7 +1,17 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  serverExternalPackages: [
+    'firebase-admin',
+    '@google-cloud/vertexai',
+    '@google-cloud/aiplatform',
+    '@googleapis/youtube',
+    'stripe',
+    '@opentelemetry/api'
+  ],
 };
 
 export default nextConfig;

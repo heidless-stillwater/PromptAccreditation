@@ -1,75 +1,131 @@
 import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
-import dotenv from 'dotenv';
-import path from 'path';
+import { getAuth, type Auth } from 'firebase-admin/auth';
+import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 
-// Force load env if not in Next.js managed environment (e.g. standalone scripts)
-if (!process.env.FIREBASE_ADMIN_PROJECT_ID) {
-  dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
-}
+/**
+ * SOVEREIGN ADMIN INITIALIZATION
+ * Stable singleton pattern for Next.js 15 / Cloud Run.
+ */
 
-function getAdminApp(): App {
-  const existing = getApps();
-  if (existing.length > 0) return existing[0];
+let adminApp: App | null = null;
 
-  const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
-  let privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
+/**
+ * TRACEABLE APP INITIALIZER
+ * Uses direct stdout to bypass framework log buffering.
+ */
+function getAdminApp(name: string = 'SOVEREIGN'): App | null {
+  if (typeof window !== 'undefined') return null;
+  if (adminApp) return adminApp;
 
-  if (privateKey) {
-    // Handle both escaped newlines and quoted strings from .env
-    privateKey = privateKey.replace(/^"|"$/g, '').replace(/\\n/g, '\n');
-  }
-
-  if (!projectId || !clientEmail || !privateKey) {
-    console.error('[FirebaseAdmin] Missing credentials:', { 
-      hasProject: !!projectId, 
-      hasEmail: !!clientEmail, 
-      hasKey: !!privateKey 
-    });
-  }
-
-  return initializeApp({
-    credential: cert({
-      projectId,
-      clientEmail,
-      privateKey,
-    }),
-  });
-}
-
-const adminApp = getAdminApp();
-
-export const adminAuth = getAuth(adminApp);
-
-function initDb(name?: string) {
   try {
-    const db = name ? getFirestore(adminApp, name) : getFirestore(adminApp);
-    // Clinical connectivity hint: Verify if it exists
-    if (name) {
-       console.log(`[FirebaseAdmin] Initialized connection to named database: ${name}`);
+    process.stdout.write(`[FirebaseAdmin] HANDSHAKE_START: ${name}\n`);
+    const apps = getApps();
+    const existing = apps.find((a) => a.name === name);
+    if (existing) {
+        adminApp = existing;
+        return adminApp;
     }
-    try {
-      db.settings({ ignoreUndefinedProperties: true });
-    } catch (e) {
-      // Ignore: settings already applied during previous HMR cycle
+
+    const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
+    let privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
+
+    if (!projectId || !privateKey) {
+        process.stdout.write(`[FirebaseAdmin] HANDSHAKE_VOID: Missing credentials\n`);
+        return null;
     }
-    return db;
-  } catch (err: any) {
-    if (name && err.message.includes('NOT_FOUND')) {
-      console.warn(`[FirebaseAdmin] SOVEREIGN_FALLBACK: Named database '${name}' not found. Falling back to (default).`);
-      return getFirestore(adminApp);
-    }
-    throw err;
+
+    process.stdout.write(`[FirebaseAdmin] PREPARING_CERT: ${projectId}\n`);
+    privateKey = privateKey.replace(/\\n/g, '\n').replace(/^["']|["']$/g, '').trim();
+    const credential = cert({ projectId, clientEmail, privateKey });
+
+    process.stdout.write(`[FirebaseAdmin] INITIALIZING_APP: ${name}\n`);
+    adminApp = initializeApp({
+      credential,
+    }, name);
+
+    return adminApp;
+  } catch (error: any) {
+    process.stdout.write(`[FirebaseAdmin] HANDSHAKE_CRASH: ${error.message} - ${error.stack}\n`);
+    return null;
   }
 }
 
-/** SOVEREIGN RESTORATION: Dedicated Named Databases */
-export const accreditationDb = initDb('promptaccreditation-db-0');
-export const masterDb = initDb('promptmaster-db-0');
-export const resourcesDb = initDb('promptresources-db-0');
-export const toolDb = initDb('prompttool-db-0');
-export const globalDb = initDb(); // Auth/Global remains on Default
+// Service Getters
+export const getAdminAuth = (): Auth | null => {
+  const app = getAdminApp();
+  return app ? getAuth(app) : null;
+};
 
-export default adminApp;
+/**
+ * Get Firestore instance for a specific database.
+ */
+export const getDb = (name?: string): Firestore | null => {
+  const app = getAdminApp();
+  if (!app) return null;
+  
+  // SOVEREIGN DATABASE TARGETING:
+  // Forced targeting to promptaccreditation-db-0 per user requirement.
+  const targetDb = name || process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0';
+  
+  try {
+    return getFirestore(app, targetDb);
+  } catch (err) {
+    process.stdout.write(`[FirebaseAdmin] Firestore error (${targetDb}): ${err}\n`);
+    return getFirestore(app);
+  }
+};
+
+// Diagnostics
+export const getDebugInfo = () => {
+  const pk = process.env.FIREBASE_ADMIN_PRIVATE_KEY || '';
+  return {
+    hasProjectId: !!(process.env.FIREBASE_ADMIN_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID),
+    hasClientEmail: !!process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+    hasPrivateKey: !!pk,
+    isPrivateKeyValid: pk.includes('BEGIN PRIVATE KEY') || pk.includes('\\n'),
+    keyLength: pk.length,
+    nodeVersion: process.version
+  };
+};
+
+/**
+ * LEGACY EXPORTS (LAZY PROXIES)
+ * These allow 'import { globalDb } from ...' without triggering initialization at build time.
+ */
+const createLazyDb = (name?: string) => {
+    return new Proxy({} as Firestore, {
+        get(_, prop) {
+            const db = getDb(name);
+            if (!db) {
+                return (...args: any[]) => ({
+                    collection: () => createLazyDb(name),
+                    doc: () => createLazyDb(name),
+                    get: () => Promise.resolve({ exists: false, docs: [], data: () => ({}) }),
+                    where: () => createLazyDb(name),
+                    orderBy: () => createLazyDb(name),
+                    limit: () => createLazyDb(name),
+                });
+            }
+            return Reflect.get(db, prop);
+        }
+    });
+};
+
+export const globalDb = createLazyDb();
+export const accreditationDb = createLazyDb(process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0');
+export const monitoringDb = createLazyDb(process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0');
+export const resourcesDb = createLazyDb(process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0');
+export const masterDb = createLazyDb(process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0');
+export const toolDb = createLazyDb(process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0');
+export const clinicalDb = createLazyDb(process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0');
+export const sentinelDb = createLazyDb(process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0');
+
+// Auth Legacy Export
+export const adminAuth = new Proxy({} as Auth, {
+    get(_, prop) {
+        const auth = getAdminAuth();
+        if (!auth) throw new Error('[Sovereign] Admin Auth accessed before initialization.');
+        return Reflect.get(auth, prop);
+    }
+});

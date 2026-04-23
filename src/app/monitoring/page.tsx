@@ -1,6 +1,8 @@
 import React from 'react';
 import { Globe, ShieldCheck, Terminal, Copy, CheckCircle2 } from 'lucide-react';
 import { PolicyService } from '@/lib/services/policy-service';
+export const dynamic = 'force-dynamic';
+import { monitoringDb } from '@/lib/firebase-admin';
 import { SUITE_APPS } from '@/lib/constants';
 import { ComplianceBadge } from '@/components/shared/compliance-badge';
 import type { Metadata } from 'next';

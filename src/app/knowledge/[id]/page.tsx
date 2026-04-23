@@ -20,7 +20,7 @@ export default async function KBDetailPage({ params }: Props) {
   const { id } = await params;
   const data = await KBService.getDocumentWithChunks(id);
   
-  if (!data) notFound();
+  if (!data || !data.doc) notFound();
   
   const { doc, chunks } = data;
 

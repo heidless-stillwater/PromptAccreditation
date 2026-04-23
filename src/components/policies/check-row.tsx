@@ -3,17 +3,19 @@
 import { useState, useTransition } from 'react';
 import { updateCheckStatus } from '@/lib/actions';
 import type { AuditCheck } from '@/lib/types';
-import { CheckCircle2, XCircle, Clock, Loader2, Bot, FileText, Shield, Activity } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Loader2, Bot, FileText, Shield, Activity, CircleDashed } from 'lucide-react';
 
 const STATUS_ICONS = {
   green: CheckCircle2,
   amber: Clock,
   red: XCircle,
+  planned: CircleDashed,
 };
 const STATUS_COLORS = {
   green: 'var(--status-green)',
   amber: 'var(--status-amber)',
   red: 'var(--status-red)',
+  planned: 'var(--muted)',
 };
 
 import { RepairStatusModal } from './repair-status-modal';

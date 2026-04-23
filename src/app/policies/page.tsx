@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Shield, Lock, Eye, ChevronRight, AlertTriangle } from 'lucide-react';
+export const dynamic = 'force-dynamic';
 import { PolicyService } from '@/lib/services/policy-service';
 import { SyncRegistryButton } from '@/components/policies/sync-registry-button';
 import type { Metadata } from 'next';
@@ -42,27 +43,29 @@ export default async function PoliciesPage() {
           return (
             <div
               key={policy.id}
-              className="glass-card p-6 flex flex-col md:flex-row items-start md:items-center gap-6 group relative overflow-hidden transition-all duration-300"
+              className="glass-card p-6 flex flex-col md:flex-row items-start md:items-center gap-6 group relative overflow-hidden transition-all duration-300 hover:border-blue-500/30 hover:bg-white/[0.04]"
             >
-              {/* Left Side: Icon & Linkable Info */}
-              <div className="flex-1 flex items-center gap-6 min-w-0">
-                <Link 
-                  href={`/policies/${policy.slug}`}
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 hover:scale-105 transition-transform"
+              {/* Card-wide Link Overlay */}
+              <Link 
+                href={`/policies/${policy.slug}`}
+                className="absolute inset-0 z-0"
+                aria-label={`View ${policy.name} details`}
+              />
+
+              {/* Left Side: Icon & Info */}
+              <div className="flex-1 flex items-center gap-6 min-w-0 relative z-10 pointer-events-none">
+                <div 
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
                   style={{ background: `${cfg.color}18`, border: `1px solid ${cfg.color}30` }}
                 >
                   <CategoryIcon size={22} style={{ color: cfg.color }} />
-                </Link>
+                </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1">
-                    <Link 
-                      href={`/policies/${policy.slug}`}
-                      className="font-bold text-base hover:text-blue-400 transition-colors" 
-                      style={{ color: 'var(--foreground)', textDecoration: 'none' }}
-                    >
+                    <h3 className="font-bold text-base" style={{ color: 'var(--foreground)' }}>
                       {policy.name}
-                    </Link>
+                    </h3>
                     <span className={`badge-${policy.status}`}>{policy.status.toUpperCase()}</span>
                   </div>
                   <p className="text-xs mb-3 text-left" style={{ color: 'var(--secondary)' }}>
@@ -84,8 +87,8 @@ export default async function PoliciesPage() {
                 </div>
               </div>
 
-              {/* Right Side: Actions (NOT inside a card-wide link) */}
-              <div className="flex flex-col items-end gap-3 flex-shrink-0 w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-white/5">
+              {/* Right Side: Actions */}
+              <div className="flex flex-col items-end gap-3 flex-shrink-0 w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-white/5 relative z-10">
                 <div className="flex items-center gap-4">
                   <span
                     className="text-xs font-mono px-2 py-1 rounded-lg"
@@ -120,7 +123,7 @@ export default async function PoliciesPage() {
               </div>
 
               {/* Hover Detail (Subtle Overlay) */}
-              <div className="absolute bottom-2 left-6 right-6 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none hidden md:flex">
+              <div className="absolute bottom-2 left-6 right-6 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none hidden md:flex relative z-10">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />

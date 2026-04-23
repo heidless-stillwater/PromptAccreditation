@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { accreditationDb } from '@/lib/firebase-admin';
 import { AuditLogEntry } from '@/lib/types';
 import { format } from 'date-fns';

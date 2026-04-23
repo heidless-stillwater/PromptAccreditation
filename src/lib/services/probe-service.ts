@@ -1,4 +1,3 @@
-import { accreditationDb, masterDb, resourcesDb } from '../firebase-admin';
 import { PolicyService } from './policy-service';
 
 export type ProbeType = 'http' | 'database' | 'system';
@@ -47,6 +46,10 @@ export class ProbeService {
 
       if (checkId === 'probe-content-moderation') {
         return await this.auditContentModeration(userId);
+      }
+
+      if (checkId === 'sec-step-1' || checkId === 'sec-step-2' || checkId === 'probe-security-headers') {
+        return await this.auditSecurityHeaders(userId);
       }
 
       return {
@@ -133,6 +136,7 @@ export class ProbeService {
 
      try {
         // 1. Try Primary (Named)
+        const { masterDb } = await import('../firebase-admin');
         const primary = await checkDb(masterDb, 'promptmaster-db-0');
         if (primary.success) return this.successResult(`Encryption verified on ${primary.label}.`);
         
@@ -171,11 +175,11 @@ export class ProbeService {
     const resourcesUrl = (process.env.RESOURCES_APP_URL || 'http://localhost:3002') + '/api/resources';
     
     try {
-      // 1. BEHAVIORAL PROBE: Check if the gate is physically intercepting requests
+      // 1. BEHAVIORAL PROBE
       console.log(`[ProbeService] BEHAVIORAL_PROBE: Attempting gated fetch from ${resourcesUrl}`);
       
       const res = await fetch(resourcesUrl, { 
-        method: 'POST', // getResourcesAction is typically a POST/Action
+        method: 'POST',
         body: JSON.stringify({ page: 1, pageSize: 1 }),
         headers: { 'Content-Type': 'application/json' },
         cache: 'no-store' 
@@ -183,13 +187,12 @@ export class ProbeService {
 
       const data = await res.json().catch(() => ({}));
       
-      // 2. VERIFICATION LOGIC:
-      // If the gate is active, the API will return complianceGated: true
       if (data.complianceGated === true) {
          return this.successResult('Behavioral Verification Successful: The Sovereign AV Gateway is physically gating content in PromptResources.');
       }
 
-      // 3. REGISTRY FALLBACK: If behavioral check didn't explicitly return the gate flag
+      // 2. REGISTRY FALLBACK
+      const { resourcesDb } = await import('../firebase-admin');
       const checkAV = async (db: any, label: string) => {
          try {
             const doc = await db.collection('system_config').doc('protection').get();
@@ -233,6 +236,7 @@ export class ProbeService {
    */
   public static async auditContentModeration(userId = 'system'): Promise<AuditResult> {
      try {
+        const { resourcesDb } = await import('../firebase-admin');
         const doc = await resourcesDb.collection('system_config').doc('moderation').get();
         if (doc.exists) {
            const data = doc.data();
@@ -273,8 +277,8 @@ export class ProbeService {
    */
   public static async auditDataLogging(userId = 'system'): Promise<AuditResult> {
      try {
-        const { accreditationDb: accDb } = await import('../firebase-admin');
-        const snap = await accDb.collection('audit_log').limit(10).get();
+        const { accreditationDb } = await import('../firebase-admin');
+        const snap = await accreditationDb.collection('audit_log').limit(10).get();
         
         const count = snap.size;
         
@@ -306,6 +310,47 @@ export class ProbeService {
           status: 'red',
           message: `Infrastructure Probe Failure (Logs): ${error.message}`,
           timestamp: new Date()
+        };
+     }
+  }
+
+  /**
+   * PROBE: Security Headers
+   * Verifies that technical hardening (HSTS, CSP, etc.) is active in satellite apps.
+   */
+  public static async auditSecurityHeaders(userId = 'system'): Promise<AuditResult> {
+     try {
+        const { resourcesDb } = await import('../firebase-admin');
+        const doc = await resourcesDb.collection('system_config').doc('security').get();
+        if (doc.exists) {
+           const data = doc.data();
+           const headers = data?.securityHeadersEnabled === true;
+           const hsts = data?.hstsEnabled === true;
+           
+           if (headers && hsts) {
+              return this.successResult('Security Verified: Mission-critical headers and HSTS are forcefully active in PromptResources.');
+           } else {
+              return {
+                 success: true,
+                 status: 'amber',
+                 message: `Security Drift: Headers found but incomplete (Headers=${headers}, HSTS=${hsts}).`,
+                 timestamp: new Date()
+              };
+           }
+        }
+        
+        return {
+           success: false,
+           status: 'red',
+           message: 'Infrastructure Drift: Security configuration MISSING in PromptResources registry.',
+           timestamp: new Date()
+        };
+     } catch (error: any) {
+        return {
+           success: false,
+           status: 'red',
+           message: `Infrastructure Probe Failure (Security): ${error.message}`,
+           timestamp: new Date()
         };
      }
   }

@@ -24,8 +24,8 @@ export async function getGemini(): Promise<GoogleGenAI> {
 
 /** Model handles — long-context for RAG, flash for quick ops */
 export const MODELS = {
-  RAG: 'gemini-1.5-flash',
-  EMBEDDING: 'text-embedding-004',
-  FLASH: 'gemini-1.5-flash',
-  ULTRA: 'gemini-1.5-pro'
+  RAG: 'models/gemini-1.5-flash',
+  EMBEDDING: 'models/gemini-embedding-001',
+  FLASH: 'models/gemini-1.5-flash',
+  ULTRA: 'models/gemini-1.5-pro'
 } as const;

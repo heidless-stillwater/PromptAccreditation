@@ -1,4 +1,5 @@
 import { BookOpen, FileText, Plus } from 'lucide-react';
+export const dynamic = 'force-dynamic';
 import { accreditationDb } from '@/lib/firebase-admin';
 import Link from 'next/link';
 import type { Metadata } from 'next';

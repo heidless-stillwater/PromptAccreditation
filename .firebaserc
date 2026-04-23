@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "heidless-apps-0"
+  },
+  "targets": {
+    "heidless-apps-0": {
+      "hosting": {
+        "promptaccreditation-v0": [
+          "promptaccreditation-v0"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

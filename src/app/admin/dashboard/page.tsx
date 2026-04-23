@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { accreditationDb } from '@/lib/firebase-admin';
 import { Ticket, Policy, AppHealthStatus } from '@/lib/types';
 import { 

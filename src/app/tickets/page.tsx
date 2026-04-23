@@ -6,6 +6,8 @@ import { ScanButton } from '@/components/shared/scan-button';
 import type { Metadata } from 'next';
 import type { Ticket } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Resolution Centre',
   description: 'Manage and resolve compliance tickets',

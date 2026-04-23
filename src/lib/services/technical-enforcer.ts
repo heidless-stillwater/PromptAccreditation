@@ -164,5 +164,51 @@ export const TechnicalEnforcer = {
         targetPath: 'UNKNOWN'
       };
     }
+  },
+  
+  /**
+   * Enforces the Security Headers Policy.
+   * Path: resourcesDb -> system_config/security
+   */
+  async enforceSecurityHeaders(actor = 'system'): Promise<EnforcementResult> {
+    console.log(`[TechnicalEnforcer] Executing_Security_Hardening (Actor: ${actor})`);
+    
+    const tryEnforceSec = async (db: any, dbLabel: string) => {
+      try {
+        await db.collection('system_config').doc('security').set({
+          securityHeadersEnabled: true,
+          hstsEnabled: true,
+          lastEnforcedBy: actor,
+          enforcedAt: new Date()
+        }, { merge: true });
+        return { success: true, label: dbLabel };
+      } catch (err: any) {
+         if (err.message.includes('NOT_FOUND')) {
+            return { success: false, label: dbLabel, isNotFound: true };
+         }
+         throw err;
+      }
+    };
+
+    try {
+      // 1. Primary Target: Resources Named Database
+      const primary = await tryEnforceSec(resourcesDb, 'promptresources-db-0');
+      if (primary.success && primary.label) return { success: true, message: `Security Headers Enforced on ${primary.label}.`, targetPath: primary.label };
+
+      // 2. Fallback: Project Default
+      const { globalDb } = await import('../firebase-admin');
+      const secondary = await tryEnforceSec(globalDb, '(default)');
+      if (secondary.success && secondary.label) return { success: true, message: `Security Headers Enforced on ${secondary.label} (Fallback).`, targetPath: secondary.label };
+
+      return { success: false, message: 'Could not locate a valid database for Security enforcement.', targetPath: 'ALL_INSTANCES' };
+
+    } catch (error: any) {
+      console.error(`[TechnicalEnforcer] ENFORCEMENT_FAILURE (Security): ${error.message}`);
+      return {
+        success: false,
+        message: `Infrastructure Lock Failed: ${error.message}`,
+        targetPath: 'UNKNOWN'
+      };
+    }
   }
 };

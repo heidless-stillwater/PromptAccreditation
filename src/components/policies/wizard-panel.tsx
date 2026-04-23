@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState, useTransition, useEffect } from 'react';
 import { completeWizardStep, skipWizardStep, startWizard } from '@/lib/actions';
 import type { Policy, WizardState } from '@/lib/types';
-import { CheckCircle2, Lock, ChevronRight, PlayCircle, SkipForward, Sparkles, Shield, Activity, Loader2 } from 'lucide-react';
+import { CheckCircle2, Lock, ChevronRight, PlayCircle, SkipForward, Sparkles, Shield, Activity, Loader2, Zap } from 'lucide-react';
 import { DraftingWizard } from './drafting-wizard';
 import { ExemplarModal } from '../wizard/ExemplarModal';
 
@@ -20,6 +20,8 @@ interface Props {
   policy: Policy;
   initialWizardState?: WizardState | null;
   userId?: string;
+  remediationActive?: boolean;
+  primaryDriftId?: string | null;
 }
 
 const DRAFTING_STAGES = [
@@ -30,7 +32,7 @@ const DRAFTING_STAGES = [
   'Finalizing...'
 ];
 
-export function WizardPanel({ policy, initialWizardState, userId }: Props) {
+export function WizardPanel({ policy, initialWizardState, userId, remediationActive, primaryDriftId }: Props) {
   const activeUserId = userId || 'local-user';
   const steps = policy.implementationGuide || [];
   const [started, setStarted] = useState(!!initialWizardState);
@@ -55,6 +57,17 @@ export function WizardPanel({ policy, initialWizardState, userId }: Props) {
       setCurrentStep(initialWizardState.stepsCompleted?.length || 0);
     }
   }, [initialWizardState]);
+
+  // SOVEREIGN STEERING: Automatic drift focus
+  useEffect(() => {
+    if (remediationActive && primaryDriftId) {
+      const driftIndex = steps.findIndex(s => s.id === primaryDriftId);
+      if (driftIndex !== -1) {
+        console.log(`[WizardPanel] Steering to drift step: ${primaryDriftId} (Index ${driftIndex})`);
+        setCurrentStep(driftIndex);
+      }
+    }
+  }, [remediationActive, primaryDriftId, steps]);
 
   const activeStep = steps[currentStep] as any;
   const currentEvidence = initialWizardState?.evidenceUploaded?.[activeStep?.id];
@@ -113,7 +126,12 @@ export function WizardPanel({ policy, initialWizardState, userId }: Props) {
   if (!steps.length) return null;
 
   return (
-    <div className="glass-card p-5">
+    <div className={`glass-card p-5 relative overflow-hidden transition-all duration-700 ${remediationActive ? 'border-red-500/40 shadow-[0_0_40px_rgba(239,68,68,0.15)] ring-2 ring-red-500/20' : ''}`}>
+      {remediationActive && (
+        <div className="absolute top-0 right-0 p-1 bg-red-500 rounded-bl-lg animate-pulse z-10">
+           <Zap size={10} className="text-white" />
+        </div>
+      )}
       <h2 className="text-sm font-bold mb-4 flex items-center gap-2">
         <PlayCircle size={14} style={{ color: 'var(--color-primary)' }} />
         Implementation Wizard
@@ -124,7 +142,7 @@ export function WizardPanel({ policy, initialWizardState, userId }: Props) {
           <p className="text-xs mb-4" style={{ color: 'var(--secondary)' }}>
             Step-by-step guidance for implementing {policy.name}. {steps.length} steps total.
           </p>
-          <button onClick={handleStart} disabled={isPending} className="btn-primary w-full justify-center text-sm">
+          <button onClick={handleStart} disabled={isPending} className="btn-primary w-full justify-center text-sm font-semibold">
             {isPending ? 'Starting...' : 'Start Wizard'}
           </button>
         </div>
@@ -143,13 +161,15 @@ export function WizardPanel({ policy, initialWizardState, userId }: Props) {
               const isDone = completed.includes(step.id);
               const isActive = i === currentStep;
               const isLocked = !isActive && !isDone;
+              const isDrifted = primaryDriftId === step.id;
+
               return (
                 <div key={step.id} className="flex items-center gap-3">
                   <div
-                    className={`wizard-step-node text-[11px] ${isDone ? 'wizard-step-completed' : isActive ? 'wizard-step-active' : 'wizard-step-locked'}`}
-                    style={{ width: 26, height: 26, fontSize: 11 }}
+                    className={`wizard-step-node font-mono ${isDone && !isDrifted ? 'wizard-step-completed' : isActive || isDrifted ? 'wizard-step-active' : 'wizard-step-locked'} ${isDrifted ? 'ring-2 ring-red-500 animate-pulse' : ''}`}
+                    style={{ width: 26, height: 26, fontSize: 10, background: isDrifted ? 'rgba(239,68,68,0.2)' : undefined, letterSpacing: '0.08em' }}
                   >
-                    {isDone ? <CheckCircle2 size={12} /> : isLocked ? <Lock size={10} /> : i + 1}
+                    {isDone && !isDrifted ? <CheckCircle2 size={12} /> : isLocked && !isDrifted ? <Lock size={10} /> : isDrifted ? <Activity size={12} className="text-red-400" /> : i + 1}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p
@@ -240,6 +260,43 @@ export function WizardPanel({ policy, initialWizardState, userId }: Props) {
             </div>
           )}
 
+          {remediationActive && primaryDriftId === activeStep.id && (
+              <div className="mb-4 p-4 glass-card border-red-500/20 glow-danger animate-in slide-in-from-top-1 relative overflow-hidden">
+                <div className="absolute inset-0 bg-red-500/5 pointer-events-none" />
+                <div className="flex items-center gap-3 mb-2 relative z-10">
+                   <div className="bg-red-500/20 p-1.5 rounded-lg border border-red-500/30">
+                      <Zap size={14} className="text-red-400" />
+                   </div>
+                   <p className="text-[10px] font-bold text-gradient-danger uppercase tracking-[0.08em]">Drift Intervention Required</p>
+                </div>
+                <p className="text-[10px] text-red-100/40 leading-relaxed mb-4 relative z-10 font-medium">
+                   This implementation step has drifted from the clinical registry. Restore integrity to release the Sovereign Lock.
+                </p>
+                <button 
+                  onClick={async () => {
+                    const { remediatePolicyAction } = await import('@/lib/actions');
+                    startTransition(async () => {
+                       const res = await remediatePolicyAction(policy.slug);
+                       if (res.success) {
+                          setRepairMsg(res.message);
+                          setRepairStatus('success');
+                          setIsModalOpen(true);
+                       } else {
+                          setRepairMsg(res.message);
+                          setRepairStatus('error');
+                          setIsModalOpen(true);
+                       }
+                    });
+                  }}
+                  disabled={isPending}
+                  className="w-full py-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold uppercase tracking-[0.1em] text-sm transition-all shadow-xl active:scale-[0.98] flex items-center justify-center gap-2 relative z-10"
+                >
+                  {isPending ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
+                  RESTORE INTEGRITY
+                </button>
+             </div>
+          )}
+
           {isPendingPanel && (
             <div className="mb-4 p-3 rounded-xl bg-blue-500/5 border border-blue-500/10 flex flex-col gap-2 animate-in slide-in-from-top-1">
                <div className="flex items-center justify-between">
@@ -285,17 +342,17 @@ export function WizardPanel({ policy, initialWizardState, userId }: Props) {
                     }
                   }}
                   disabled={isPendingPanel}
-                  className="btn-primary w-full justify-center text-sm py-3 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/20"
+                  className={`btn-primary w-full justify-center text-sm py-3 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/20 transition-all ${remediationActive ? 'ring-2 ring-white animate-pulse-slow' : ''}`}
                 >
                   <Sparkles size={14} className="animate-pulse" />
-                  Draft Evidence with Stillwater AI
+                  {remediationActive ? 'Auto-Remediate with Stillwater AI' : 'Draft Evidence with Stillwater AI'}
                 </button>
               </div>
             )}
 
             {!isDrafting && !isPendingPanel && (
               <div className="flex flex-col gap-2">
-                {/* Auto-Repair Shortcut */}
+                {/* Auto-Repair Shortcuts */}
                 {(activeStep.id === 'dpa-step-2' || activeStep.id === 'encryption-enforcement') && (
                   <button 
                     onClick={async () => {
@@ -316,7 +373,61 @@ export function WizardPanel({ policy, initialWizardState, userId }: Props) {
                       });
                     }}
                     disabled={isPending}
-                    className="btn-ghost !bg-emerald-500/20 hover:!bg-emerald-500/40 !border-emerald-500/50 flex items-center justify-center gap-2 text-[11px] font-black text-emerald-400 py-3 border-2 animate-pulse-slow mb-1"
+                    className="btn-ghost !bg-emerald-500/10 hover:!bg-emerald-500/20 !border-emerald-500/30 flex items-center justify-center gap-2 text-[10px] font-bold text-emerald-400 py-3 border tracking-[0.08em] animate-pulse-slow mb-1 uppercase font-mono"
+                  >
+                    {isPending ? <Loader2 size={12} className="animate-spin" /> : <Activity size={12} />}
+                    AUTO-REPAIR SYSTEMS
+                  </button>
+                )}
+
+                {activeStep.id === 'osa-step-3' && (
+                  <button 
+                    onClick={async () => {
+                      const { triggerAVGatewayRepair } = await import('@/lib/actions');
+                      startTransition(async () => {
+                        const result = await triggerAVGatewayRepair(policy.id);
+                        if (result.success) {
+                          setCompleted((prev) => [...prev, activeStep.id]);
+                          setCurrentStep((i) => Math.min(i + 1, steps.length));
+                          setRepairMsg('AV Gateway has been technically enforced. Age verification is now active across all satellite nodes.');
+                          setRepairStatus('success');
+                          setIsModalOpen(true);
+                        } else {
+                          setRepairMsg(result.message);
+                          setRepairStatus('error');
+                          setIsModalOpen(true);
+                        }
+                      });
+                    }}
+                    disabled={isPending}
+                    className="btn-ghost !bg-emerald-500/10 hover:!bg-emerald-500/20 !border-emerald-500/30 flex items-center justify-center gap-2 text-[10px] font-bold text-emerald-400 py-3 border tracking-[0.08em] animate-pulse-slow mb-1 uppercase font-mono"
+                  >
+                    {isPending ? <Loader2 size={12} className="animate-spin" /> : <Activity size={12} />}
+                    AUTO-REPAIR SYSTEMS
+                  </button>
+                )}
+
+                {activeStep.id === 'osa-step-4' && (
+                  <button 
+                    onClick={async () => {
+                      const { triggerModerationRepair } = await import('@/lib/actions');
+                      startTransition(async () => {
+                        const result = await triggerModerationRepair(policy.id);
+                        if (result.success) {
+                          setCompleted((prev) => [...prev, activeStep.id]);
+                          setCurrentStep((i) => Math.min(i + 1, steps.length));
+                          setRepairMsg('Content Moderation has been technically enforced. Automated flagging and AI screening are now active.');
+                          setRepairStatus('success');
+                          setIsModalOpen(true);
+                        } else {
+                          setRepairMsg(result.message);
+                          setRepairStatus('error');
+                          setIsModalOpen(true);
+                        }
+                      });
+                    }}
+                    disabled={isPending}
+                    className="btn-ghost !bg-emerald-500/10 hover:!bg-emerald-500/20 !border-emerald-500/30 flex items-center justify-center gap-2 text-[10px] font-bold text-emerald-400 py-3 border tracking-[0.08em] animate-pulse-slow mb-1 uppercase font-mono"
                   >
                     {isPending ? <Loader2 size={12} className="animate-spin" /> : <Activity size={12} />}
                     AUTO-REPAIR SYSTEMS
@@ -358,15 +469,15 @@ export function WizardPanel({ policy, initialWizardState, userId }: Props) {
 
       {/* SOVEREIGN DIAGNOSTICS */}
       <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
-         <div className="flex items-center justify-between text-[9px] font-mono text-white/20 uppercase tracking-tighter">
+         <div className="flex items-center justify-between text-[10px] font-mono text-white/20 uppercase tracking-[0.08em]">
             <span>Authenticated_As</span>
             <span className="text-blue-400 font-bold">local-user</span>
          </div>
-         <div className="flex items-center justify-between text-[9px] font-mono text-white/20 uppercase tracking-tighter">
+         <div className="flex items-center justify-between text-[10px] font-mono text-white/20 uppercase tracking-[0.08em]">
             <span>System_Ref_ID</span>
-            <span className="text-white/40">{policy.id}</span>
+            <span className="text-white/40 font-bold">{policy.id.substring(0, 12)}...</span>
          </div>
-         <div className="p-2 rounded bg-black/40 border border-white/5 text-[8px] font-mono text-emerald-500/60 break-all">
+         <div className="p-2 rounded bg-black/40 border border-white/5 text-[9px] font-mono text-emerald-500/40 break-all tracking-[0.05em]">
             Last_Action: {completed.length > 0 ? `Completed_${completed[completed.length-1]}` : 'Ready_to_Start'}
          </div>
       </div>

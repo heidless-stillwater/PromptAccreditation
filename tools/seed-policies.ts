@@ -35,7 +35,7 @@ async function seed() {
     
     await docRef.set({
       ...policy,
-      createdAt: existing.exists ? existing.data()?.createdAt : new Date(),
+      createdAt: (existing.exists && existing.data()?.createdAt) ? existing.data()?.createdAt : new Date(),
       updatedAt: new Date(),
     }, { merge: true });
     console.log(`  ✅ Synchronized: ${policy.name} (${policy.slug})`);

@@ -135,5 +135,24 @@ export const KBService = {
     return sanitize(scoredList
       .sort((a, b) => b.score - a.score)
       .slice(0, limit) as KBChunk[]);
+  },
+
+  /**
+   * Fetch a document and its associated chunks by ID.
+   */
+  async getDocumentWithChunks(id: string): Promise<{ doc: KBDocument | null; chunks: KBChunk[] }> {
+    const docRef = accreditationDb.collection('kb_documents').doc(id);
+    const docSnap = await docRef.get();
+    
+    if (!docSnap.exists) {
+      return { doc: null, chunks: [] };
+    }
+    
+    const docData = { id: docSnap.id, ...docSnap.data() } as KBDocument;
+    
+    const chunksSnap = await docRef.collection('chunks').get();
+    const chunks = chunksSnap.docs.map(d => ({ id: d.id, ...d.data() } as KBChunk));
+    
+    return sanitize({ doc: docData, chunks });
   }
 };

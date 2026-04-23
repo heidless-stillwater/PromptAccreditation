@@ -15,7 +15,7 @@ export async function getStripe() {
         }
         
         stripeInstance = new Stripe(apiKey, {
-            apiVersion: '2024-06-20', // Using latest stable supported version
+            apiVersion: '2026-03-25.dahlia', 
             typescript: true,
         });
     }

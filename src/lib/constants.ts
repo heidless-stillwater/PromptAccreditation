@@ -127,7 +127,7 @@ Use the "Run Check" button to probe PromptResources automatically.`,
 4. Documented removal SLA (e.g., ≤24h for illegal content)
 
 ### Active Controller Fix
-Click "Active Fix" to activate automated flagging and AI screening in PromptResources.
+Click "Trigger Active Fix" in the Infrastructural Console to activate automated flagging and AI screening in PromptResources.
 
 ### Evidence
 Upload your content moderation policy document.`,
@@ -558,7 +558,7 @@ export const SUITE_APPS = [
   { id: 'prompttool',  name: 'PromptTool',      dbId: 'prompttool-db-0',      port: 3001 },
   { id: 'promptresources', name: 'PromptResources', dbId: 'promptresources-db-0', port: 3002 },
   { id: 'promptmaster', name: 'PromptMasterSPA', dbId: 'promptmaster-db-0',    port: 5173 },
-  { id: 'promptaccreditation', name: 'PromptAccreditation', dbId: 'promptaccreditation-db-0', port: 3000 },
+  { id: 'promptaccreditation', name: 'PromptAccreditation', dbId: 'promptaccreditation-db-0', port: 3003 },
 ];
 
 export const STRIPE_PRODUCTS = {
