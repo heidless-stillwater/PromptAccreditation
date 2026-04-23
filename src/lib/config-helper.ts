@@ -1,4 +1,3 @@
-import { globalDb } from './firebase-admin';
 import { decrypt } from './crypto';
 
 const CACHE_TTL = 1000; // 1 second cache for testing propagation
@@ -20,8 +19,8 @@ export async function getSecret(key: string): Promise<string | undefined> {
 
     try {
         // Fetch from PromptTool Hub (prompttool-db-0 -> system_config/global_secrets)
-        const { toolDb } = await import('./firebase-admin');
-        const doc = await toolDb.collection('system_config').doc('global_secrets').get();
+        const { accreditationDb } = await import('./firebase-admin');
+        const doc = await accreditationDb.collection('system_config').doc('global_secrets').get();
         
         if (doc.exists) {
             const data = doc.data();

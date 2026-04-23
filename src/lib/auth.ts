@@ -21,12 +21,12 @@ export async function createSession(idToken: string) {
       sameSite: 'lax',
     });
     
-    // Fetch profile from Global Hub
+    // Fetch profile from Named Hub
     const decodedClaims = await auth.verifyIdToken(idToken);
-    const db = getDb();
-    if (!db) throw new Error('Global DB unavailable');
+    const { accreditationDb } = await import('./firebase-admin');
+    if (!accreditationDb) throw new Error('Accreditation DB unavailable');
 
-    const userSnap = await db.collection('users').doc(decodedClaims.uid).get();
+    const userSnap = await accreditationDb.collection('users').doc(decodedClaims.uid).get();
     const profile = userSnap.data();
 
     return {
@@ -62,10 +62,10 @@ export async function getSessionUser() {
 
     const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
     
-    // Fetch extended profile from Global Hub
+    // Fetch extended profile from Named Hub
     const db = getDb();
     if (!db) {
-        console.warn('[Auth] getSessionUser: globalDb unavailable');
+        console.warn('[Auth] getSessionUser: accreditationDb unavailable');
         return {
             uid: decodedClaims.uid,
             email: decodedClaims.email || '',

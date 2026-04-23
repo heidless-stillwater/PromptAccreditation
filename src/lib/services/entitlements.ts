@@ -35,24 +35,31 @@ export const EntitlementService = {
    */
   async getAccreditationTier(uid: string): Promise<AccreditationTier> {
     try {
-      const userDoc = await globalDb.collection('users').doc(uid).get();
+      const { accreditationDb } = await import('../firebase-admin');
+      const userDoc = await accreditationDb.collection('users').doc(uid).get();
       if (!userDoc.exists) return 'free';
       const data = userDoc.data()!;
 
-      // Admins get enterprise
-      if (data.role === 'admin' || data.role === 'su') return 'enterprise';
+      // 1. Admin/SU Authority
+      if (data.role === 'admin' || data.role === 'su' || data.isAdmin === true) return 'enterprise';
 
-      // Check suite subscription
-      const subscriptionObj =
-        data.suiteSubscription ||
-        data.subscriptionMetadata ||
-        (typeof data.subscription === 'object' ? data.subscription : null);
+      // 2. Direct Root-Level Tier (PromptTool Standard)
+      const rootTier = data.tier || data.subscriptionType || data.subscription;
+      if (rootTier === 'enterprise') return 'enterprise';
+      if (rootTier === 'professional' || rootTier === 'pro') return 'professional';
 
-      const activeSuites: string[] = subscriptionObj?.activeSuites || [];
+      // 3. Suite Subscription Mapping
+      const subscriptionObj = data.suiteSubscription || data.subscriptionMetadata;
+      if (subscriptionObj) {
+        const tier = subscriptionObj.tier;
+        if (tier === 'enterprise') return 'enterprise';
+        if (tier === 'professional' || tier === 'pro') return 'professional';
 
-      if (activeSuites.includes('accreditation-enterprise')) return 'enterprise';
-      if (activeSuites.includes('accreditation-professional')) return 'professional';
-      if (activeSuites.includes('accreditation')) return 'professional';
+        const activeSuites: string[] = subscriptionObj.activeSuites || [];
+        if (activeSuites.includes('accreditation-enterprise')) return 'enterprise';
+        if (activeSuites.includes('accreditation-professional')) return 'professional';
+        if (activeSuites.includes('accreditation')) return 'professional';
+      }
 
       return 'free';
     } catch (err) {
@@ -71,12 +78,13 @@ export const EntitlementService = {
 
   /** Get readable plan label */
   getTierLabel(tier: AccreditationTier): string {
-    const labels: Record<AccreditationTier, string> = {
+    const tierLabels: Record<string, string> = {
       free: 'Community',
-      professional: 'Professional',
-      enterprise: 'Enterprise',
+      professional: 'Pro',
+      pro: 'Pro',
+      enterprise: 'Pro'
     };
-    return labels[tier];
+    return tierLabels[tier];
   },
 
   async getUserData(uid: string) {

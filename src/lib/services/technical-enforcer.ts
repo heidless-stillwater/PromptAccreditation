@@ -44,12 +44,7 @@ export const TechnicalEnforcer = {
       const primary = await tryEnforce(masterDb, 'promptmaster-db-0');
       if (primary.success && primary.label) return { success: true, message: `Master Encryption Enforced on ${primary.label}.`, targetPath: primary.label };
 
-      // 2. Secondary Target: Project Default (Fallback)
-      const { globalDb } = await import('../firebase-admin');
-      const secondary = await tryEnforce(globalDb, '(default)');
-      if (secondary.success && secondary.label) return { success: true, message: `Master Encryption Enforced on ${secondary.label} (Fallback).`, targetPath: secondary.label };
-
-      // 3. Safety Net: Accreditation DB
+      // 2. Safety Net: Accreditation DB
       const { accreditationDb } = await import('../firebase-admin');
       const final = await tryEnforce(accreditationDb, 'promptaccreditation-db-0');
       if (final.success && final.label) return { success: true, message: `Master Encryption Enforced on ${final.label} (Clinical Safety Net).`, targetPath: final.label };
@@ -92,12 +87,7 @@ export const TechnicalEnforcer = {
       const primary = await tryEnforceAV(resourcesDb, 'promptresources-db-0');
       if (primary.success && primary.label) return { success: true, message: `AV Gateway Enforced on ${primary.label}.`, targetPath: primary.label };
 
-      // 2. Fallback: Project Default
-      const { globalDb } = await import('../firebase-admin');
-      const secondary = await tryEnforceAV(globalDb, '(default)');
-      if (secondary.success && secondary.label) return { success: true, message: `AV Gateway Enforced on ${secondary.label} (Fallback).`, targetPath: secondary.label };
-
-      // 3. Safety Net: Accreditation DB
+      // 2. Safety Net: Accreditation DB
       const { accreditationDb } = await import('../firebase-admin');
       const final = await tryEnforceAV(accreditationDb, 'promptaccreditation-db-0');
       if (final.success && final.label) return { success: true, message: `AV Gateway Enforced on ${final.label} (Clinical Safety Net).`, targetPath: final.label };
@@ -144,12 +134,7 @@ export const TechnicalEnforcer = {
       const primary = await tryEnforceMod(resourcesDb, 'promptresources-db-0');
       if (primary.success && primary.label) return { success: true, message: `Moderation Enforced on ${primary.label}.`, targetPath: primary.label };
 
-      // 2. Fallback: Project Default
-      const { globalDb } = await import('../firebase-admin');
-      const secondary = await tryEnforceMod(globalDb, '(default)');
-      if (secondary.success && secondary.label) return { success: true, message: `Moderation Enforced on ${secondary.label} (Fallback).`, targetPath: secondary.label };
-
-      // 3. Safety Net: Accreditation DB
+      // 2. Safety Net: Accreditation DB
       const { accreditationDb } = await import('../firebase-admin');
       const final = await tryEnforceMod(accreditationDb, 'promptaccreditation-db-0');
       if (final.success && final.label) return { success: true, message: `Moderation Enforced on ${final.label} (Clinical Safety Net).`, targetPath: final.label };
@@ -195,10 +180,10 @@ export const TechnicalEnforcer = {
       const primary = await tryEnforceSec(resourcesDb, 'promptresources-db-0');
       if (primary.success && primary.label) return { success: true, message: `Security Headers Enforced on ${primary.label}.`, targetPath: primary.label };
 
-      // 2. Fallback: Project Default
-      const { globalDb } = await import('../firebase-admin');
-      const secondary = await tryEnforceSec(globalDb, '(default)');
-      if (secondary.success && secondary.label) return { success: true, message: `Security Headers Enforced on ${secondary.label} (Fallback).`, targetPath: secondary.label };
+      // 2. Safety Net: Accreditation DB
+      const { accreditationDb } = await import('../firebase-admin');
+      const final = await tryEnforceSec(accreditationDb, 'promptaccreditation-db-0');
+      if (final.success && final.label) return { success: true, message: `Security Headers Enforced on ${final.label} (Clinical Safety Net).`, targetPath: final.label };
 
       return { success: false, message: 'Could not locate a valid database for Security enforcement.', targetPath: 'ALL_INSTANCES' };
 

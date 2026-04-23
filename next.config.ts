@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
     'stripe',
     '@opentelemetry/api'
   ],
+  output: 'standalone',
 };
 
 export default nextConfig;

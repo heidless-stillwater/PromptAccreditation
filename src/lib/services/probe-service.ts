@@ -140,11 +140,6 @@ export class ProbeService {
         const primary = await checkDb(masterDb, 'promptmaster-db-0');
         if (primary.success) return this.successResult(`Encryption verified on ${primary.label}.`);
         
-        // 2. Try Fallback (Default)
-        const { globalDb } = await import('../firebase-admin');
-        const secondary = await checkDb(globalDb, '(default)');
-        if (secondary.success) return this.successResult(`Encryption verified on ${secondary.label} (Fallback).`);
-
         // 3. Try Safety Net (Accreditation)
         const { accreditationDb: accDb } = await import('../firebase-admin');
         const final = await checkDb(accDb, 'promptaccreditation-db-0');

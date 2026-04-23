@@ -9,12 +9,16 @@ let genaiInstance: GoogleGenAI | null = null;
  */
 export async function getGemini(): Promise<GoogleGenAI> {
   if (!genaiInstance) {
-    // Use a custom secret name to bypass automated scanners targeting "GEMINI_API_KEY"
-    const apiKey = await getSecret('STILLWATER_AI_TOKEN');
+    let apiKey = await getSecret('STILLWATER_AI_TOKEN');
+
+    // Fallback to local environment variable for development/testing
+    if (!apiKey) {
+      apiKey = process.env.NANOBANANA_API_KEY || process.env.GEMINI_API_KEY;
+    }
 
     if (!apiKey) {
       throw new Error(
-        '[Gemini] No API key found. Set GEMINI_API_KEY in global_secrets or NANOBANANA_API_KEY in .env.local'
+        '[Gemini] No API key found. Set STILLWATER_AI_TOKEN in global_secrets or NANOBANANA_API_KEY in .env.local'
       );
     }
     genaiInstance = new GoogleGenAI({ apiKey });
@@ -24,8 +28,8 @@ export async function getGemini(): Promise<GoogleGenAI> {
 
 /** Model handles — long-context for RAG, flash for quick ops */
 export const MODELS = {
-  RAG: 'models/gemini-1.5-flash',
-  EMBEDDING: 'models/gemini-embedding-001',
-  FLASH: 'models/gemini-1.5-flash',
-  ULTRA: 'models/gemini-1.5-pro'
+  RAG: 'gemini-2.5-pro',
+  EMBEDDING: 'gemini-embedding-001',
+  FLASH: 'gemini-2.5-flash',
+  ULTRA: 'gemini-2.5-pro'
 } as const;

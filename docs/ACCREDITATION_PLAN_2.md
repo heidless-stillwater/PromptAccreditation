@@ -1,4 +1,4 @@
-# PromptAccreditation v2.0 — Active Policy Controller
+`# PromptAccreditation v2.0 — Active Policy Controller
 ## Complete Rebuild Implementation Plan
 
 > **Generated:** 2026-04-13  

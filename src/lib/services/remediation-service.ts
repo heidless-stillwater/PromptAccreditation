@@ -130,6 +130,20 @@ export const RemediationService = {
 
   /** Manual Logic for Ad-hoc Fixes */
   async executeFix(fixId: string, userId: string): Promise<{ success: boolean; message: string }> {
+    const { EntitlementService } = await import('./entitlements');
+    const tier = await EntitlementService.getAccreditationTier(userId);
+    
+    if (!EntitlementService.hasFeature(tier, 'activeRemediation')) {
+      await AuditService.log({
+        action: 'ACCESS_DENIED',
+        actor: userId,
+        targetType: 'config',
+        targetId: fixId,
+        details: { reason: 'Insufficient subscription tier for Active Remediation.' }
+      });
+      return { success: false, message: 'Active Remediation is a Professional feature. Please upgrade in Settings.' };
+    }
+
     console.log(`[RemediationService] EXECUTING_FIX: ${fixId} for user ${userId}`);
     
     const ticketId = await TicketService.raiseIfNotDuplicate({

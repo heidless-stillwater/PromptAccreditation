@@ -11,18 +11,17 @@ let adminApp: App | null = null;
 
 /**
  * TRACEABLE APP INITIALIZER
- * Uses direct stdout to bypass framework log buffering.
+ * Uses the [DEFAULT] app name for suite-wide compatibility.
  */
-function getAdminApp(name: string = 'SOVEREIGN'): App | null {
+function getAdminApp(): App | null {
   if (typeof window !== 'undefined') return null;
   if (adminApp) return adminApp;
 
   try {
-    process.stdout.write(`[FirebaseAdmin] HANDSHAKE_START: ${name}\n`);
+    process.stdout.write(`[FirebaseAdmin] HANDSHAKE_START: [DEFAULT]\n`);
     const apps = getApps();
-    const existing = apps.find((a) => a.name === name);
-    if (existing) {
-        adminApp = existing;
+    if (apps.length > 0) {
+        adminApp = apps[0];
         return adminApp;
     }
 
@@ -39,10 +38,10 @@ function getAdminApp(name: string = 'SOVEREIGN'): App | null {
     privateKey = privateKey.replace(/\\n/g, '\n').replace(/^["']|["']$/g, '').trim();
     const credential = cert({ projectId, clientEmail, privateKey });
 
-    process.stdout.write(`[FirebaseAdmin] INITIALIZING_APP: ${name}\n`);
+    process.stdout.write(`[FirebaseAdmin] INITIALIZING_APP: [DEFAULT]\n`);
     adminApp = initializeApp({
       credential,
-    }, name);
+    });
 
     return adminApp;
   } catch (error: any) {
@@ -72,7 +71,7 @@ export const getDb = (name?: string): Firestore | null => {
     return getFirestore(app, targetDb);
   } catch (err) {
     process.stdout.write(`[FirebaseAdmin] Firestore error (${targetDb}): ${err}\n`);
-    return getFirestore(app);
+    throw new Error(`[Sovereign] Critical: Database ${targetDb} unavailable. Isolation enforced.`);
   }
 };
 
@@ -112,8 +111,9 @@ const createLazyDb = (name?: string) => {
     });
 };
 
-export const globalDb = createLazyDb();
-export const accreditationDb = createLazyDb(process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0');
+/** GLOBAL IDENTITY — Redirected to local accreditation DB per instruction */
+export const globalDb = createLazyDb('promptaccreditation-db-0');
+export const accreditationDb = createLazyDb('promptaccreditation-db-0');
 export const monitoringDb = createLazyDb(process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0');
 export const resourcesDb = createLazyDb(process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0');
 export const masterDb = createLazyDb(process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0');

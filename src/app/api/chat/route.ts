@@ -23,6 +23,19 @@ You do NOT hallucinate legislation. If the Knowledge Base does not contain a spe
 
 export async function POST(req: NextRequest) {
   try {
+    const { getSessionUser } = await import('@/lib/auth');
+    const { EntitlementService } = await import('@/lib/services/entitlements');
+    
+    const user = await getSessionUser();
+    if (!user) return NextResponse.json({ error: 'Auth required' }, { status: 401 });
+    
+    const tier = await EntitlementService.getAccreditationTier(user.uid);
+    if (!EntitlementService.hasFeature(tier, 'aiChat')) {
+      return NextResponse.json({ 
+        error: 'AI Policy Chat is a Professional feature. Please upgrade in Settings.' 
+      }, { status: 403 });
+    }
+
     const body = await req.json();
     const { question, history = [] } = body;
 

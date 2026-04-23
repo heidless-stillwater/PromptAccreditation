@@ -100,11 +100,16 @@ export const KBService = {
     const genai = await getGemini();
     
     // 1. Embed the user query
-    const queryResult = await (genai as any).models.embedContent({
+    const queryResult = await genai.models.embedContent({
       model: MODELS.EMBEDDING,
-      contents: [{ parts: [{ text: query }] }]
+      contents: [query]
     });
-    const queryVector = queryResult.embedding.values;
+    const queryVector = queryResult.embeddings?.[0]?.values;
+
+    if (!queryVector) {
+      console.error('[KBService] Failed to generate query embedding');
+      return [];
+    }
 
     // 2. Fetch recent chunks (Limited set for local compute)
     const docsSnap = await accreditationDb

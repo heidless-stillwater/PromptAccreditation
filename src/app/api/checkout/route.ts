@@ -25,6 +25,8 @@ export async function POST(req: NextRequest) {
       metadata: {
         userId: user.uid,
         email: user.email,
+        tier: priceId.includes('enterprise') ? 'enterprise' : 'professional',
+        app: 'accreditation'
       },
     });
 

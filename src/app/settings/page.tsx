@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { Settings, Shield, CreditCard, User, Bell, LogOut, ChevronRight, Zap } from 'lucide-react';
 import { getSessionUser } from '@/lib/auth';
 import { EntitlementService } from '@/lib/services/entitlements';
+import { UpgradeButton } from '@/components/shared/upgrade-button';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -39,11 +40,23 @@ export default async function SettingsPage() {
                 <p className="text-xs text-slate-500">Currently on the <span className="text-amber-400 font-bold uppercase">{tier}</span> tier.</p>
               </div>
             </div>
-            {tier === 'free' && (
-              <button className="btn-primary text-xs shadow-amber-500/20" style={{ background: 'var(--color-warning)' }}>
-                Upgrade to Enterprise
-              </button>
-            )}
+            <div className="flex gap-2">
+              {tier === 'free' && (
+                <UpgradeButton 
+                  priceId="price_professional" 
+                  label="Upgrade to Pro" 
+                  className="btn-primary text-[10px] flex items-center gap-2"
+                />
+              )}
+              {tier !== 'enterprise' && (
+                <UpgradeButton 
+                  priceId="price_enterprise" 
+                  label="Upgrade to Enterprise" 
+                  className="btn-primary text-[10px] flex items-center gap-2"
+                  style={{ background: 'var(--color-warning)' }}
+                />
+              )}
+            </div>
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 bg-white/[0.01]">
             <div className="space-y-1">
