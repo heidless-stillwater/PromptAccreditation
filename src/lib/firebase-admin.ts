@@ -114,12 +114,12 @@ const createLazyDb = (name?: string) => {
 /** GLOBAL IDENTITY — Redirected to local accreditation DB per instruction */
 export const globalDb = createLazyDb('promptaccreditation-db-0');
 export const accreditationDb = createLazyDb('promptaccreditation-db-0');
-export const monitoringDb = createLazyDb(process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0');
-export const resourcesDb = createLazyDb(process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0');
-export const masterDb = createLazyDb(process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0');
-export const toolDb = createLazyDb(process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0');
-export const clinicalDb = createLazyDb(process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0');
-export const sentinelDb = createLazyDb(process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0');
+export const monitoringDb = createLazyDb('promptaccreditation-db-0');
+export const resourcesDb = createLazyDb('promptresources-db-0');
+export const masterDb = createLazyDb('prompttool-db-0');
+export const toolDb = createLazyDb('prompttool-db-0');
+export const clinicalDb = createLazyDb('promptaccreditation-db-0');
+export const sentinelDb = createLazyDb('promptaccreditation-db-0');
 
 // Auth Legacy Export
 export const adminAuth = new Proxy({} as Auth, {

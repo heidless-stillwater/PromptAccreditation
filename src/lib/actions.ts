@@ -300,6 +300,27 @@ export async function triggerActiveFix(ticketId: string, fixId?: string) {
     if (!effectiveFixId) {
       const ticket = await TicketService.getTicketById(ticketId);
       effectiveFixId = ticket?.remediation?.fixId;
+      
+      // Handle Content Reinstatement
+      if (effectiveFixId === 'reinstate_content') {
+        const resourceId = (ticket?.remediation as any)?.resourceId;
+        if (!resourceId) throw new Error('Resource ID missing for reinstatement.');
+        
+        const { TechnicalEnforcer } = await import('./services/technical-enforcer');
+        const result = await TechnicalEnforcer.reinstateResource(resourceId, user.email || user.uid);
+        
+        if (result.success) {
+          await TicketService.resolveTicket(ticketId, {
+            type: 'active_fix',
+            notes: 'Content reinstated by administrator via Active Fix.',
+            resolvedBy: user.email || user.uid
+          });
+        }
+        
+        revalidatePath('/tickets');
+        revalidatePath(`/tickets/${ticketId}`);
+        return result;
+      }
     }
     if (!effectiveFixId) throw new Error('No automated fix found.');
     
@@ -528,5 +549,19 @@ export async function uploadKBDocument(title: string, category: PolicyCategory, 
     return { success: true, docId };
   } catch (error: any) {
     return { success: false, error: error.message };
+  }
+}
+
+export async function deleteTicketAction(ticketId: string) {
+  const user = await AuthService.getCurrentUser();
+  if (!user) return { success: false, message: 'Unauthorized' };
+
+  try {
+    await TicketService.deleteTicket(ticketId, user.email || user.uid);
+    revalidatePath('/tickets');
+    revalidatePath('/');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, message: error.message };
   }
 }

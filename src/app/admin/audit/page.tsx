@@ -87,7 +87,9 @@ export default async function AuditPage() {
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-2 text-slate-300">
                       <User className="w-4 h-4 text-slate-500" />
-                      <span className="text-sm font-mono truncate max-w-[150px]">{log.actor}</span>
+                      <span className="text-sm font-mono truncate max-w-[150px]">
+                        {typeof log.actor === 'object' ? (log.actor as any)?.email || JSON.stringify(log.actor) : log.actor}
+                      </span>
                     </div>
                   </td>
                   <td className="px-6 py-5">

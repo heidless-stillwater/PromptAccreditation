@@ -38,6 +38,24 @@ export const PolicyService = {
     
     const policies = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Policy));
     
+    // SOVEREIGN_AUTO_SEEDER: Ensure all INITIAL_POLICIES exist in the database
+    const existingSlugs = new Set(policies.map(p => p.slug));
+    const missingBaselines = INITIAL_POLICIES.filter(bp => !existingSlugs.has(bp.slug));
+    
+    if (missingBaselines.length > 0) {
+       console.log(`[PolicyService] SOVEREIGN_SEEDER: Found ${missingBaselines.length} missing baseline policies. Syncing to registry...`);
+       await Promise.all(missingBaselines.map(async (bp) => {
+          const docRef = accreditationDb.collection('policies').doc(bp.slug);
+          await docRef.set({
+             ...bp,
+             createdAt: new Date(),
+             updatedAt: new Date()
+          });
+          // Add to local list so it shows up immediately
+          policies.push({ id: bp.slug, ...bp, createdAt: new Date(), updatedAt: new Date() } as Policy);
+       }));
+    }
+
     // SOVEREIGN_DE_DUPLICATION & BASELINE_SYNC
     const uniqueMap = new Map<string, Policy>();
     const ghotsToPurge: string[] = [];

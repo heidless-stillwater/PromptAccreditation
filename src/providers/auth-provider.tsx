@@ -25,19 +25,26 @@ const AuthContext = createContext<AuthContextType>({
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const userRef = useRef<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authInitialized, setAuthInitialized] = useState(false);
   const [redirectChecked, setRedirectChecked] = useState(false);
   const router = useRouter();
   const syncInProgress = useRef(false);
+  const lastSyncTime = useRef(0);
 
   const syncSession = useCallback(async (firebaseUser: User) => {
-    if (syncInProgress.current) return;
+    // Prevent concurrent syncs or rapid fire syncs (within 2 seconds)
+    const now = Date.now();
+    if (syncInProgress.current || (now - lastSyncTime.current < 2000)) return;
+    
     syncInProgress.current = true;
+    lastSyncTime.current = now;
     
     console.log('[Auth-V2] Synchronizing session for:', firebaseUser.email);
     try {
-      const idToken = await firebaseUser.getIdToken(true); 
+      // Use cached token unless expired. Forced refresh can trigger auth state loops.
+      const idToken = await firebaseUser.getIdToken(); 
       const res = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -47,18 +54,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         console.log('[Auth-V2] Session synced successful.');
-        setUser({
-          ...firebaseUser,
+        
+        const enrichedUser = {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          photoURL: firebaseUser.photoURL,
           isAdmin: data.profile?.isAdmin || false,
           tier: data.profile?.tier || 'free'
-        } as any);
+        } as any;
+        
+        setUser(enrichedUser);
+        userRef.current = enrichedUser;
       } else {
         console.warn('[Auth-V2] Session sync failed:', res.status);
-        setUser(firebaseUser);
+        const fallbackUser = {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          photoURL: firebaseUser.photoURL,
+          isAdmin: false,
+          tier: 'free'
+        } as any;
+        setUser(fallbackUser);
+        userRef.current = fallbackUser;
       }
     } catch (err) {
       console.error('[Auth-V2] Sync error:', err);
       setUser(firebaseUser);
+      userRef.current = firebaseUser;
     } finally {
       syncInProgress.current = false;
       setLoading(false);
@@ -98,9 +122,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (authInitialized && !isLoginPage) {
           console.log('[Auth-V2] Clearing session...');
           setUser(null);
+          userRef.current = null;
           await fetch('/api/auth/session', { method: 'DELETE' });
         } else {
           setUser(null);
+          userRef.current = null;
         }
         setLoading(false);
       }
@@ -108,7 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     const pollTimer = setInterval(() => {
-        if (!user && auth.currentUser) {
+        if (!userRef.current && auth.currentUser) {
             syncSession(auth.currentUser);
         }
     }, 5000);

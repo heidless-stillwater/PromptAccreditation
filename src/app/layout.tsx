@@ -33,10 +33,8 @@ export default function RootLayout({
         <AuthProvider>
           <div className="flex h-screen overflow-hidden">
             <Sidebar />
-            <main className="flex-1 overflow-y-auto bg-[#07080a]">
-              <div className="min-h-full p-6 lg:p-8">
-                {children}
-              </div>
+            <main className="flex-1 overflow-hidden bg-[#07080a]">
+              {children}
             </main>
           </div>
         </AuthProvider>

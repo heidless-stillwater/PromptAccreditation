@@ -195,5 +195,42 @@ export const TechnicalEnforcer = {
         targetPath: 'UNKNOWN'
       };
     }
+  },
+
+  /**
+   * Reinstates a flagged/hidden resource in PromptResources.
+   * Path: resourcesDb -> resources/{resourceId}
+   */
+  async reinstateResource(resourceId: string, actor = 'system'): Promise<EnforcementResult> {
+    console.log(`[TechnicalEnforcer] Executing_Resource_Reinstatement: ${resourceId} (Actor: ${actor})`);
+    try {
+      await resourcesDb.collection('resources').doc(resourceId).update({
+        status: 'published',
+        updatedAt: new Date(),
+        reinstatedBy: actor,
+        reinstatedAt: new Date()
+      });
+      
+      await AuditService.log({
+        action: 'CONTENT_REINSTATED',
+        actor,
+        targetType: 'resource',
+        targetId: resourceId,
+        message: 'Resource reinstated after regulatory review.'
+      });
+
+      return { 
+        success: true, 
+        message: `Resource ${resourceId} successfully reinstated to 'published' status.`, 
+        targetPath: 'promptresources/resources' 
+      };
+    } catch (err: any) {
+       console.error(`[TechnicalEnforcer] REINSTATEMENT_FAILURE: ${err.message}`);
+       return { 
+         success: false, 
+         message: `Reinstatement Failed: ${err.message}`, 
+         targetPath: 'promptresources/resources' 
+       };
+    }
   }
 };

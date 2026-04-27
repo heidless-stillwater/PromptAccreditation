@@ -1,10 +1,12 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft, TicketCheck, Calendar, User, Clock, Shield, Zap, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, TicketCheck, Calendar, User, Clock, Shield, Zap, AlertCircle, CheckCircle2, ExternalLink } from 'lucide-react';
 import { TicketService } from '@/lib/services/ticket-service';
 import { FixButton } from '@/components/shared/fix-button';
+import { DeleteTicketButton } from '@/components/tickets/delete-ticket-button';
 import { format } from 'date-fns';
 import type { Metadata } from 'next';
+import { TicketResponseForm } from '@/components/tickets/ticket-response-form';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -78,7 +80,9 @@ export default async function TicketDetailPage({ params }: Props) {
                         {entry.timestamp ? format(new Date(entry.timestamp), 'HH:mm:ss') : ''}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 mb-2">By {entry.actor}</p>
+                    <p className="text-xs text-slate-500 mb-2">
+                      By {typeof entry.actor === 'object' ? (entry.actor as any)?.email || JSON.stringify(entry.actor) : entry.actor}
+                    </p>
                     {entry.details && (
                       <div className="p-3 rounded-lg bg-black/30 border border-white/5 text-xs text-slate-400 font-mono">
                         {entry.details}
@@ -89,6 +93,8 @@ export default async function TicketDetailPage({ params }: Props) {
               ))}
             </div>
           </div>
+
+          <TicketResponseForm ticketId={ticket.id} />
         </div>
 
         {/* Right Column: Sidebar */}
@@ -127,6 +133,7 @@ export default async function TicketDetailPage({ params }: Props) {
                   Close as Won't Fix
                 </button>
               )}
+              <DeleteTicketButton ticketId={ticket.id} />
               {isResolved && (
                 <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-center">
                   <CheckCircle2 size={24} className="mx-auto mb-2 text-green-500" />
@@ -143,9 +150,21 @@ export default async function TicketDetailPage({ params }: Props) {
             <h2 className="text-sm font-bold tracking-widest uppercase mb-4 opacity-60">Affected Assets</h2>
             <div className="space-y-2">
               {(ticket.affectedApps || []).map(app => (
-                <div key={app} className="flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/5">
-                  <Zap size={14} className="text-amber-400" />
-                  <span className="text-xs font-mono">{app}</span>
+                <div key={app} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
+                  <div className="flex items-center gap-2">
+                    <Zap size={14} className="text-amber-400" />
+                    <span className="text-xs font-mono">{app}</span>
+                  </div>
+                  {app === 'promptresources' && ticket.remediation?.resourceId && (
+                    <a 
+                      href={`http://localhost:3002/resources/${ticket.remediation.resourceId}?ticketId=${ticket.id}&returnUrl=${encodeURIComponent(`http://localhost:3003/tickets/${ticket.id}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] font-black text-blue-400 hover:text-blue-300 flex items-center gap-1 uppercase tracking-tighter"
+                    >
+                      Review Details <ExternalLink size={10} />
+                    </a>
+                  )}
                 </div>
               ))}
             </div>

@@ -94,6 +94,7 @@ export interface Ticket {
   remediation: {
     type: RemediationType;
     fixId?: string;
+    resourceId?: string;
     evidenceUrl?: string | null;
     notes?: string;
     resolvedBy?: string;

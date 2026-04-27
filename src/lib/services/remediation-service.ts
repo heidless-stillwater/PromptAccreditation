@@ -30,24 +30,116 @@ export const RemediationService = {
 
     try {
       switch (fixId) {
+        case 'encryption_enforcement_fix':
+        case 'encryption-enforcement':
+        case 'dpa-step-2':
+        case 'fix-encryption':
+          return await this.fixEncryptionEnforcement(ticketId);
         case 'av_gateway_fix':
         case 'fix-av-gateway':
+        case 'osa-step-3':
           return await this.fixAVGateway(ticketId);
         case 'moderation_baseline_fix':
         case 'fix-content-moderation':
+        case 'osa-step-4':
           return await this.fixModerationBaseline(ticketId);
-        case 'encryption_enforcement_fix':
-        case 'encryption-enforcement':
-        case 'fix-encryption':
-          return await this.fixEncryptionEnforcement(ticketId);
         case 'fix-data-audit':
           return await this.fixDataAudit(ticketId);
+        case 'reinstate_content':
+          return await this.reinstateContent(ticketId);
+        case 'archive_content':
+          return await this.archiveContent(ticketId);
         default:
           throw new Error(`Unknown fix definition: ${fixId}`);
       }
     } catch (e: any) {
       console.error(`[RemediationService] Fix failed: ${e.message}`);
       return { success: false, message: e.message };
+    }
+  },
+
+  /** Fix: Reinstate Flagged/Hidden Content */
+  async reinstateContent(ticketId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const ticket = await TicketService.getTicketById(ticketId);
+      if (!ticket || !ticket.remediation?.resourceId) {
+        throw new Error('Ticket does not contain a valid resourceId for reinstatement.');
+      }
+
+      const { resourcesDb, toolDb } = await import('../firebase-admin');
+      const resourceId = ticket.remediation.resourceId;
+
+      console.log(`[RemediationService] REINSTATING_RESOURCE: ${resourceId}`);
+      
+      const resourceDoc = await resourcesDb.collection('resources').doc(resourceId).get();
+      const resourceData = resourceDoc.data();
+
+      await resourcesDb.collection('resources').doc(resourceId).update({
+        status: 'published',
+        reportType: null,
+        updatedAt: new Date()
+      });
+
+      // 1.1 Remove strike for the contributor
+      if (resourceData?.addedBy) {
+        const userRef = toolDb.collection('users').doc(resourceData.addedBy);
+        const userDoc = await userRef.get();
+        if (userDoc.exists) {
+            const currentStrikes = userDoc.data()?.strikes || 0;
+            const newStrikes = Math.max(0, currentStrikes - 1);
+            await userRef.update({ 
+                strikes: newStrikes,
+                updatedAt: new Date()
+            });
+            console.log(`[RemediationService] STRIKE_REMOVED: User ${resourceData.addedBy} now has ${newStrikes} strikes.`);
+        }
+      }
+
+      // 2. Resolve Ticket
+      await TicketService.resolveTicket(ticketId, {
+        type: 'active_fix',
+        notes: `Resource ${resourceId} has been administratively reinstated. Contributor strike removed.`,
+        resolvedBy: 'Sovereign_Remediator'
+      });
+
+      return { success: true, message: 'Resource successfully reinstated and strike removed.' };
+
+    } catch (error: any) {
+      console.error(`[RemediationService] REINSTATEMENT_FAILURE: ${error.message}`);
+      return { success: false, message: `Reinstatement Error: ${error.message}` };
+    }
+  },
+
+  /** Fix: Archive Tainted Content */
+  async archiveContent(ticketId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const ticket = await TicketService.getTicketById(ticketId);
+      if (!ticket || !ticket.remediation?.resourceId) {
+        throw new Error('Ticket does not contain a valid resourceId for archiving.');
+      }
+
+      const { resourcesDb } = await import('../firebase-admin');
+      const resourceId = ticket.remediation.resourceId;
+
+      console.log(`[RemediationService] ARCHIVING_RESOURCE: ${resourceId}`);
+      
+      await resourcesDb.collection('resources').doc(resourceId).update({
+        status: 'tainted',
+        updatedAt: new Date()
+      });
+
+      // 2. Resolve Ticket
+      await TicketService.resolveTicket(ticketId, {
+        type: 'active_fix',
+        notes: `Resource ${resourceId} has been archived as "tainted" following moderation review. Strike remains active.`,
+        resolvedBy: 'Sovereign_Remediator'
+      });
+
+      return { success: true, message: 'Resource successfully archived as tainted.' };
+
+    } catch (error: any) {
+      console.error(`[RemediationService] ARCHIVING_FAILURE: ${error.message}`);
+      return { success: false, message: `Archiving Error: ${error.message}` };
     }
   },
 

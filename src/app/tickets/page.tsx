@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { TicketCheck, Clock, CheckCircle2, AlertTriangle, Zap, ChevronRight } from 'lucide-react';
+import { TicketCheck, Clock, CheckCircle2, AlertTriangle, Zap, ChevronRight, ExternalLink } from 'lucide-react';
 import { TicketService } from '@/lib/services/ticket-service';
 import { FixButton } from '@/components/shared/fix-button';
 import { ScanButton } from '@/components/shared/scan-button';
@@ -56,6 +56,16 @@ function TicketCard({ ticket }: { ticket: Ticket }) {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          {ticket.remediation?.resourceId && (
+            <a 
+              href={`http://localhost:3002/resources/${ticket.remediation.resourceId}?ticketId=${ticket.id}&returnUrl=${encodeURIComponent('http://localhost:3003/tickets')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-ghost text-[10px] uppercase font-black tracking-widest flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg hover:bg-blue-500/20 transition-all"
+            >
+              <ExternalLink size={10} /> Open Source
+            </a>
+          )}
           {hasActiveFix ? (
             <FixButton ticketId={ticket.id} fixId={ticket.remediation.fixId} />
           ) : (

@@ -136,7 +136,7 @@ export default function PolicyAIChat() {
   }
 
   return (
-    <main className="flex flex-col h-full" style={{ maxHeight: 'calc(100vh - 0px)' }}>
+    <main className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <header className="flex-shrink-0 px-8 py-5 border-b flex items-center justify-between" style={{ borderColor: 'var(--color-border)' }}>
         <div className="flex items-center gap-3">

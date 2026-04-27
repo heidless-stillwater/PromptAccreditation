@@ -155,4 +155,15 @@ export const TicketService = {
     }
     return this.createTicket(data);
   },
+
+  async deleteTicket(id: string, actor = 'system'): Promise<void> {
+    await accreditationDb.collection('tickets').doc(id).delete();
+    await AuditService.log({
+      action: 'ticket_deleted',
+      actor,
+      targetType: 'ticket',
+      targetId: id,
+      details: {},
+    });
+  },
 };
