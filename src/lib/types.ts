@@ -202,7 +202,7 @@ export interface AuditLogEntry {
   id: string;
   action: string;
   actor: string;
-  targetType: 'policy' | 'ticket' | 'check' | 'config' | 'scan' | 'remediation' | 'policy_check';
+  targetType: 'policy' | 'ticket' | 'check' | 'config' | 'scan' | 'remediation' | 'policy_check' | 'resource';
   targetId: string;
   details: Record<string, unknown>;
   timestamp: Date | null;

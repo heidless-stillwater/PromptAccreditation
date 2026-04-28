@@ -216,7 +216,7 @@ export const TechnicalEnforcer = {
         actor,
         targetType: 'resource',
         targetId: resourceId,
-        message: 'Resource reinstated after regulatory review.'
+        details: { message: 'Resource reinstated after regulatory review.' }
       });
 
       return { 
