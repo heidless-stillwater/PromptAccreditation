@@ -20,15 +20,17 @@ export default async function PoliciesPage() {
   const policies = await PolicyService.getAllPolicies();
 
   return (
-    <main className="p-8 max-w-6xl mx-auto animate-fade-in">
-      <header className="mb-10">
-        <div className="flex items-center gap-3 mb-2 text-left">
-          <Shield size={22} style={{ color: 'var(--color-primary)' }} />
-          <h1 className="text-3xl font-bold">Policy Hub</h1>
+    <main className="max-w-7xl mx-auto p-8 animate-fade-in space-y-12">
+      <header className="flex justify-between items-end border-b border-teal-500/10 pb-8">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <Shield size={22} className="text-teal-500" />
+            <h1 className="text-3xl font-bold font-outfit">Policy Hub</h1>
+          </div>
+          <p className="text-sm font-medium text-slate-400">
+            Guided implementation wizards and enforcement controls for the Prompt App Suite.
+          </p>
         </div>
-        <p className="text-sm text-left" style={{ color: 'var(--secondary)' }}>
-          Guided implementation wizards and enforcement controls for each governance policy.
-        </p>
       </header>
 
       <div className="space-y-4">
@@ -43,7 +45,7 @@ export default async function PoliciesPage() {
           return (
             <div
               key={policy.id}
-              className="glass-card p-6 flex flex-col md:flex-row items-start md:items-center gap-6 group relative overflow-hidden transition-all duration-300 hover:border-blue-500/30 hover:bg-white/[0.04]"
+              className="glass-card p-6 flex flex-col md:flex-row items-start md:items-center gap-8 group relative overflow-hidden transition-all duration-300"
             >
               {/* Card-wide Link Overlay */}
               <Link 
@@ -53,34 +55,33 @@ export default async function PoliciesPage() {
               />
 
               {/* Left Side: Icon & Info */}
-              <div className="flex-1 flex items-center gap-6 min-w-0 relative z-10 pointer-events-none">
+              <div className="flex-1 flex items-center gap-8 min-w-0 relative z-10 pointer-events-none">
                 <div 
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: `${cfg.color}18`, border: `1px solid ${cfg.color}30` }}
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-teal-500/5 border border-teal-500/10 group-hover:bg-teal-500/10 transition-colors"
                 >
-                  <CategoryIcon size={22} style={{ color: cfg.color }} />
+                  <CategoryIcon size={26} className="text-teal-400" />
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="font-bold text-base" style={{ color: 'var(--foreground)' }}>
+                  <div className="flex items-center gap-3 mb-1.5">
+                    <h3 className="font-bold text-lg text-white group-hover:text-teal-400 transition-colors">
                       {policy.name}
                     </h3>
-                    <span className={`badge-${policy.status}`}>{policy.status.toUpperCase()}</span>
+                    <div className={`badge-${policy.status}`}>{policy.status.toUpperCase()}</div>
                   </div>
-                  <p className="text-xs mb-3 text-left" style={{ color: 'var(--secondary)' }}>
-                    {policy.regulatoryBody} · Penalty: {policy.maxPenalty}
+                  <p className="text-xs font-medium text-slate-500 mb-4">
+                    {policy.regulatoryBody} &bull; <span className="text-rose-400">Penalty: {policy.maxPenalty}</span>
                   </p>
 
                   <div className="max-w-md">
-                    <div className="flex justify-between text-[10px] mb-1">
-                      <span style={{ color: 'var(--muted)' }}>Implementation progress</span>
-                      <span style={{ color: 'var(--secondary)' }}>{passed}/{total} checks</span>
+                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-1.5 text-slate-500">
+                      <span>Implementation Progress</span>
+                      <span className="text-teal-500">{passed}/{total} Checks Verified</span>
                     </div>
-                    <div className="progress-track">
+                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                       <div
-                        className={`progress-fill-${policy.status} h-full rounded-full`}
-                        style={{ width: `${pct}%`, transition: 'width 0.7s ease' }}
+                        className={`h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 shadow-[0_0_8px_rgba(20,184,166,0.3)]`}
+                        style={{ width: `${pct}%`, transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)' }}
                       />
                     </div>
                   </div>
@@ -88,19 +89,18 @@ export default async function PoliciesPage() {
               </div>
 
               {/* Right Side: Actions */}
-              <div className="flex flex-col items-end gap-3 flex-shrink-0 w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-white/5 relative z-10">
+              <div className="flex flex-col items-end gap-4 flex-shrink-0 w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-white/5 relative z-10">
                 <div className="flex items-center gap-4">
                   <span
-                    className="text-xs font-mono px-2 py-1 rounded-lg"
-                    style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--secondary)', border: '1px solid var(--color-border)' }}
+                    className="text-[10px] font-black font-mono px-3 py-1 rounded bg-white/5 text-slate-500 border border-white/5 uppercase tracking-widest"
                   >
-                    {policy.intensity.toUpperCase()}
+                    {policy.intensity.toUpperCase()} INTENSITY
                   </span>
 
                   {openChecks > 0 && (
-                    <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--status-amber)' }}>
+                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-amber-500">
                       <AlertTriangle size={12} />
-                      <span>{openChecks} open checks</span>
+                      <span>{openChecks} Open Checks</span>
                     </div>
                   )}
                 </div>
@@ -113,24 +113,12 @@ export default async function PoliciesPage() {
                   
                   <Link 
                     href={`/policies/${policy.slug}`}
-                    className="flex items-center gap-2 text-xs font-semibold hover:text-blue-400 transition-colors"
-                    style={{ color: 'var(--color-primary)', textDecoration: 'none' }}
+                    className="btn-ghost flex items-center gap-2 text-xs font-bold hover:text-teal-400 transition-all px-4 py-2"
                   >
                     <span>Open Wizard</span>
                     <ChevronRight size={14} />
                   </Link>
                 </div>
-              </div>
-
-              {/* Hover Detail (Subtle Overlay) */}
-              <div className="absolute bottom-2 left-6 right-6 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none hidden md:flex relative z-10">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    <span className="text-[10px] font-mono" style={{ color: 'rgba(16, 185, 129, 0.6)' }}>{passed} verified</span>
-                  </div>
-                </div>
-                <span className="text-[8px] font-mono" style={{ color: 'rgba(255, 255, 255, 0.1)' }}>ID: {policy.id.substring(0, 8)}...</span>
               </div>
             </div>
           );
@@ -139,3 +127,4 @@ export default async function PoliciesPage() {
     </main>
   );
 }
+

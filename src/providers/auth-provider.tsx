@@ -45,11 +45,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Use cached token unless expired. Forced refresh can trigger auth state loops.
       const idToken = await firebaseUser.getIdToken(); 
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s Clinical Timeout
+
       const res = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
-      });
+        signal: controller.signal
+      }).finally(() => clearTimeout(timeoutId));
 
       if (res.ok) {
         const data = await res.json();
@@ -79,11 +84,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(fallbackUser);
         userRef.current = fallbackUser;
       }
-    } catch (err) {
-      console.error('[Auth-V2] Sync error:', err);
+    } catch (err: any) {
+      console.error('[Auth-V2] Sync error (possibly timeout):', err.message);
+      // Fallback to basic firebase user to unblock UI
       setUser(firebaseUser);
       userRef.current = firebaseUser;
     } finally {
+
       syncInProgress.current = false;
       setLoading(false);
     }
@@ -100,13 +107,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkRedirect = async () => {
       try {
         console.log('[Auth-V2] Checking for redirect result...');
-        const result = await getRedirectResult(auth);
+        // CLINICAL TIMEOUT: Prevent redirect check from hanging initialization
+        const result = await Promise.race([
+          getRedirectResult(auth),
+          new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Redirect timeout')), 8000))
+        ]) as any;
+
         if (result?.user) {
           console.log('[Auth-V2] Redirect result captured:', result.user.email);
           await syncSession(result.user);
         }
       } catch (err: any) {
-        console.error('[Auth-V2] Redirect check error:', err);
+        console.error('[Auth-V2] Redirect check error (possibly timeout):', err.message);
       } finally {
         setRedirectChecked(true);
       }
@@ -123,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('[Auth-V2] Clearing session...');
           setUser(null);
           userRef.current = null;
-          await fetch('/api/auth/session', { method: 'DELETE' });
+          fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {}); // Fire and forget
         } else {
           setUser(null);
           userRef.current = null;
@@ -145,7 +157,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         unsubscribe();
         clearInterval(pollTimer);
     };
-  }, [syncSession]);
+  }, [syncSession, authInitialized]);
+
+  // ═══════════════════════════════════════════════════════
+  // GLOBAL SAFETY VALVE
+  // ═══════════════════════════════════════════════════════
+  useEffect(() => {
+    const valve = setTimeout(() => {
+        console.warn('[Auth-V2] STATIC_SAFETY_VALVE: DEFCON 1 - Force unlocking UI.');
+        setLoading(false);
+        setAuthInitialized(true);
+        setRedirectChecked(true);
+    }, 5000);
+    return () => clearTimeout(valve);
+  }, []); // Run exactly ONCE on mount. Cannot be reset by state hangs.
+
 
   const signOut = async () => {
     setLoading(true);
@@ -169,14 +195,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{ user, loading: isGlobalLoading, signOut, syncSession, authInitialized, redirectChecked }}>
       {mounted && isGlobalLoading && typeof window !== 'undefined' && window.location.pathname !== '/login' ? (
-          <div className="fixed inset-0 bg-[#07080a] z-[999] flex flex-col items-center justify-center space-y-6 text-white transition-opacity duration-500">
-              <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
-              <div className="text-center">
-                  <p className="font-bold text-lg tracking-tight">Synchronizing Sovereign Access</p>
-                  <p className="text-slate-500 text-xs font-mono lowercase tracking-widest mt-2 font-bold">Authenticating with Global Hub...</p>
-              </div>
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#07080a]">
+          <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-6" />
+          <h2 className="text-xl font-bold text-white mb-2 tracking-tight">Synchronizing Sovereign Access</h2>
+          <p className="text-sm text-slate-500 font-mono animate-pulse uppercase tracking-widest mb-8 text-center max-w-xs">
+            Establishing Link with Ecosystem Hubs...
+          </p>
+          
+          <div className="flex flex-col items-center gap-4">
+             <button 
+                onClick={() => {
+                    setLoading(false);
+                    setAuthInitialized(true);
+                    setRedirectChecked(true);
+                }}
+                className="px-6 py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 rounded-full text-xs font-bold text-blue-400 uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(59,130,246,0.2)]"
+             >
+                Force Release UI
+             </button>
+             <div className="text-[9px] font-mono text-slate-700 uppercase tracking-tighter text-center max-w-xs">
+                Sovereign_Shield v2.0.42 // Stabilized_Handshake<br/>
+                Warning: Satellite Link Port 3002 may be unresponsive.
+             </div>
           </div>
+
+        </div>
       ) : null}
+
       {children}
     </AuthContext.Provider>
   );

@@ -1,4 +1,4 @@
-import { accreditationDb } from '../firebase-admin';
+import { accreditationDb, withTimeout } from '../firebase-admin';
 import { Ticket, TicketStatus, TimelineEntry, RemediationType } from '../types';
 import { AuditService } from './audit-service';
 import { Timestamp } from 'firebase-admin/firestore';
@@ -49,26 +49,30 @@ export const TicketService = {
   },
 
   async getOpenTickets(): Promise<Ticket[]> {
-    const snap = await accreditationDb
-      .collection('tickets')
-      .where('status', 'in', ['open', 'in_progress'])
-      .orderBy('createdAt', 'desc')
-      .get();
+    const snap = await withTimeout(
+      accreditationDb
+        .collection('tickets')
+        .where('status', 'in', ['open', 'in_progress'])
+        .orderBy('createdAt', 'desc')
+        .get()
+    );
     return sanitize(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Ticket)));
   },
 
   async getResolvedTickets(): Promise<Ticket[]> {
-    const snap = await accreditationDb
-      .collection('tickets')
-      .where('status', 'in', ['resolved', 'wont_fix'])
-      .orderBy('updatedAt', 'desc')
-      .limit(20)
-      .get();
+    const snap = await withTimeout(
+      accreditationDb
+        .collection('tickets')
+        .where('status', 'in', ['resolved', 'wont_fix'])
+        .orderBy('updatedAt', 'desc')
+        .limit(20)
+        .get()
+    );
     return sanitize(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Ticket)));
   },
 
   async getTicketById(id: string): Promise<Ticket | null> {
-    const doc = await accreditationDb.collection('tickets').doc(id).get();
+    const doc = await withTimeout(accreditationDb.collection('tickets').doc(id).get());
     if (!doc.exists) return null;
     return sanitize({ id: doc.id, ...doc.data() } as Ticket);
   },

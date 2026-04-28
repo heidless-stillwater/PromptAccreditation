@@ -29,14 +29,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
-      <body className="bg-[#07080a] text-[#e2e8f4] font-sans antialiased selection:bg-blue-500/30">
+      <body className="bg-[#0f172a] text-[#e2e8f4] font-sans antialiased selection:bg-blue-500/30">
         <AuthProvider>
-          <div className="flex h-screen overflow-hidden">
+          <div className="flex h-screen overflow-hidden bg-[#0f172a]">
             <Sidebar />
-            <main className="flex-1 overflow-hidden bg-[#07080a]">
+            <main className="flex-1 overflow-y-auto scroll-smooth">
               {children}
             </main>
           </div>
+
         </AuthProvider>
       </body>
     </html>

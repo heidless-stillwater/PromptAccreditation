@@ -22,48 +22,52 @@ export default async function MonitoringPage() {
   );
 
   return (
-    <main className="p-8 max-w-6xl mx-auto animate-fade-in">
-      <header className="mb-12">
-        <div className="flex items-center gap-3 mb-2">
-          <Globe size={24} style={{ color: 'var(--color-primary)' }} />
-          <h1 className="text-3xl font-bold">Seal Registry</h1>
+    <main className="max-w-7xl mx-auto p-8 animate-fade-in space-y-12">
+      <header className="flex justify-between items-end border-b border-teal-500/10 pb-8">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <Globe size={24} className="text-teal-500" />
+            <h1 className="text-3xl font-bold font-outfit">Seal Registry</h1>
+          </div>
+          <p className="text-sm font-medium text-slate-400 max-w-2xl">
+            Manage your suite-wide compliance badges. These seals are cryptographically linked to your active governance policies and will automatically revoke if compliance drift is detected.
+          </p>
         </div>
-        <p className="text-sm max-w-2xl" style={{ color: 'var(--secondary)' }}>
-          Manage your suite-wide compliance badges. These seals are cryptographically linked to your active governance policies and will automatically revoke if compliance drift is detected.
-        </p>
       </header>
 
       {/* Grid of Badges */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-10">
         {appStatuses.map((app) => (
-          <div key={app.id} className="flex flex-col gap-4">
-            <div className="flex items-center justify-between px-2">
-              <h3 className="text-sm font-bold font-mono tracking-widest text-white/40 uppercase">
+          <div key={app.id} className="flex flex-col gap-6">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-[10px] font-black font-mono tracking-[0.2em] text-slate-500 uppercase">
                 {app.name} Authority
               </h3>
               {app.passed && (
-                <span className="flex items-center gap-1 text-[10px] text-green-400 font-bold">
-                  <CheckCircle2 size={10} /> SECURE LINK
-                </span>
+                <div className="flex items-center gap-2 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-400 uppercase tracking-widest">
+                  <CheckCircle2 size={10} /> Secure Link
+                </div>
               )}
             </div>
             
-            <ComplianceBadge 
-              appId={app.id}
-              verified={app.passed}
-              score={app.score}
-              lastAudit={app.lastScan || new Date()}
-            />
+            <div className="glass-card p-6 border-teal-500/10">
+              <ComplianceBadge 
+                appId={app.id}
+                verified={app.passed}
+                score={app.score}
+                lastAudit={app.lastScan || new Date()}
+              />
+            </div>
 
             {/* Integration Snippet */}
-            <div className="console-panel !p-0 overflow-hidden">
-              <div className="px-4 py-2 border-b border-white/5 bg-white/5 flex justify-between items-center">
-                <span className="text-[10px] font-mono text-white/40">EMBED SNIPPET</span>
-                <button className="text-[10px] font-mono text-blue-400 hover:text-blue-300 flex items-center gap-1">
-                  <Copy size={10} /> Copy
+            <div className="glass-card overflow-hidden !p-0">
+              <div className="px-5 py-3 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                <span className="text-[10px] font-black font-mono text-slate-500 uppercase tracking-widest">Integration Snippet</span>
+                <button className="text-[10px] font-black font-mono text-teal-400 hover:text-teal-300 flex items-center gap-2 transition-colors">
+                  <Copy size={12} /> Copy
                 </button>
               </div>
-              <pre className="p-4 text-[10px] font-mono text-white/60 overflow-x-auto">
+              <pre className="p-5 text-[11px] font-mono text-slate-400 bg-black/40 overflow-x-auto leading-relaxed">
                 <code>{`<ComplianceBadge \n  appId="${app.id}" \n  verified={status.verified} \n  score={status.score} \n/>`}</code>
               </pre>
             </div>
@@ -72,23 +76,24 @@ export default async function MonitoringPage() {
       </section>
 
       {/* API Reference */}
-      <section className="glass-card p-8">
-        <div className="flex items-center gap-3 mb-6">
-          <Terminal size={20} className="text-blue-400" />
-          <h2 className="text-lg font-bold">Real-time Verification API</h2>
+      <section className="glass-card p-10 border-teal-500/10">
+        <div className="flex items-center gap-4 mb-8 pb-6 border-b border-white/5">
+          <Terminal size={22} className="text-teal-400" />
+          <h2 className="text-xl font-bold font-outfit text-white">Real-time Verification API</h2>
         </div>
         
-        <div className="space-y-6">
+        <div className="space-y-8">
           <div>
-            <p className="text-xs font-bold text-white/60 mb-2 uppercase tracking-tight">Endpoint</p>
-            <div className="p-3 bg-black/40 rounded-xl font-mono text-xs text-blue-400 border border-white/5">
-              GET /api/verify/[appId]
+            <p className="text-[10px] font-black text-slate-500 mb-3 uppercase tracking-widest">Endpoint Definition</p>
+            <div className="p-4 bg-black/40 rounded-xl font-mono text-sm text-teal-400 border border-teal-500/10 flex items-center gap-3">
+               <span className="px-2 py-0.5 rounded bg-teal-500/10 text-xs font-bold uppercase">Get</span>
+               <span>/api/verify/[appId]</span>
             </div>
           </div>
 
           <div>
-            <p className="text-xs font-bold text-white/60 mb-2 uppercase tracking-tight">Sample Response</p>
-            <div className="p-4 bg-black/40 rounded-xl font-mono text-[11px] text-white/50 border border-white/5">
+            <p className="text-[10px] font-black text-slate-500 mb-3 uppercase tracking-widest">Sample Verification Payload</p>
+            <div className="p-6 bg-black/40 rounded-xl font-mono text-[12px] text-slate-400 border border-white/5 leading-relaxed">
               <pre>
 {`{
   "success": true,
@@ -102,10 +107,10 @@ export default async function MonitoringPage() {
             </div>
           </div>
 
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-500/5 border border-blue-500/20">
-            <ShieldCheck size={16} className="text-blue-400 mt-0.5" />
-            <p className="text-xs leading-relaxed text-blue-100/70">
-              <strong>Security Protocol:</strong> Access-Control-Allow-Origin is set to '*' by default to support cross-app verification. For production, we recommend restricting this to your specific suite domains in the Cloud Console.
+          <div className="flex items-start gap-4 p-5 rounded-xl bg-teal-500/5 border border-teal-500/10">
+            <ShieldCheck size={20} className="text-teal-400 mt-0.5 flex-shrink-0" />
+            <p className="text-xs leading-relaxed text-slate-400">
+              <strong className="text-white">Security Protocol:</strong> Access-Control-Allow-Origin is set to '*' by default to support cross-app verification. For production, we recommend restricting this to your specific suite domains in the Cloud Console to maintain sovereign integrity.
             </p>
           </div>
         </div>
@@ -113,3 +118,4 @@ export default async function MonitoringPage() {
     </main>
   );
 }
+

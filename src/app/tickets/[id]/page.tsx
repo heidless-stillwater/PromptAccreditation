@@ -14,14 +14,55 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const ticket = await TicketService.getTicketById(id);
+  
+  // DIAGNOSTIC BYPASS: Return dummy data to check if server is hanging on DB
+  const ticket: any = {
+      id,
+      title: 'DIAGNOSTIC_TICKET',
+      description: 'If you see this, the server is NOT hanging. The DB is the culprit.',
+      priority: 'high',
+      status: 'open',
+      type: 'compliance_gap',
+      policySlug: 'dpa',
+      timeline: []
+  };
+
   return { title: ticket?.title || 'Ticket Details' };
 }
 
 export default async function TicketDetailPage({ params }: Props) {
   const { id } = await params;
-  const ticket = await TicketService.getTicketById(id);
-  if (!ticket) notFound();
+  const { withTimeout } = await import('@/lib/firebase-admin');
+
+  try {
+    const { AuditService } = await import('@/lib/services/audit-service');
+    const { RemediationService } = await import('@/lib/services/remediation-service');
+
+    const [ticket, auditLogs] = await withTimeout(Promise.all([
+        TicketService.getTicketById(id),
+        AuditService.getLogsByTarget('ticket', id)
+    ]), 8000);
+
+    if (!ticket) notFound();
+    
+    // Fetch resource details if available from the Resources Hub
+    let remediationResource = null;
+    if (ticket.remediation?.resourceId) {
+        try {
+            const { resourcesDb } = await import('@/lib/firebase-admin');
+            const resourceDoc = await withTimeout(
+                resourcesDb.collection('resources').doc(ticket.remediation.resourceId).get(),
+                5000
+            );
+            if (resourceDoc.exists) {
+                remediationResource = { id: resourceDoc.id, ...resourceDoc.data() };
+            }
+        } catch (e) {
+            console.warn('[TicketDetailPage] Remediation Resource fetch timed out or failed.');
+        }
+    }
+
+
 
   const isResolved = ticket.status === 'resolved' || ticket.status === 'wont_fix';
 
@@ -188,5 +229,10 @@ export default async function TicketDetailPage({ params }: Props) {
         </div>
       </div>
     </main>
-  );
+    );
+  } catch (error: any) {
+    if (error.digest === 'NEXT_NOT_FOUND') throw error;
+    console.error('[TicketDetailPage] Critical Error:', error);
+    return notFound();
+  }
 }

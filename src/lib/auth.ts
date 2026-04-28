@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { getAdminAuth, getDb } from './firebase-admin';
+import { getAdminAuth, getDb, withTimeout } from './firebase-admin';
 import { EntitlementService } from './services/entitlements';
 
 const SESSION_NAME = '__session';
@@ -26,7 +26,7 @@ export async function createSession(idToken: string) {
     const { accreditationDb } = await import('./firebase-admin');
     if (!accreditationDb) throw new Error('Accreditation DB unavailable');
 
-    const userSnap = await accreditationDb.collection('users').doc(decodedClaims.uid).get();
+    const userSnap = await withTimeout(accreditationDb.collection('users').doc(decodedClaims.uid).get());
     const profile = userSnap.data();
 
     return {
@@ -75,7 +75,7 @@ export async function getSessionUser() {
         };
     }
 
-    const userSnap = await db.collection('users').doc(decodedClaims.uid).get();
+    const userSnap = await withTimeout(db.collection('users').doc(decodedClaims.uid).get());
     const profile = userSnap.data();
 
     return {
