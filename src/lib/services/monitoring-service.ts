@@ -94,7 +94,7 @@ export const MonitoringService = {
       .orderBy('executedAt', 'desc')
       .limit(limit)
       .get();
-    return snap.docs.map((d) => d.data() as ScanResult);
+    return snap.docs.map((d: any) => d.data() as ScanResult);
   },
 };
 

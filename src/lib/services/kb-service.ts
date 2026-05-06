@@ -66,7 +66,7 @@ export const KBService = {
 
     await accreditationDb.collection('kb_documents').doc(docId).set(kbDoc);
 
-    const chunkPromises = chunks.map(async (chunk, idx) => {
+    const chunkPromises = chunks.map(async (chunk: any, idx: number) => {
       const result = await genai.models.embedContent({
         model: MODELS.EMBEDDING,
         contents: [chunk]
@@ -120,9 +120,9 @@ export const KBService = {
 
     if (docsSnap.empty) return [];
 
-    const chunkFetchPromises = docsSnap.docs.map(async (doc) => {
+    const chunkFetchPromises = docsSnap.docs.map(async (doc: any) => {
       const chunksSnap = await doc.ref.collection('chunks').get();
-      return chunksSnap.docs.map(d => ({ ...d.data(), docTitle: doc.data().title } as KBChunk));
+      return chunksSnap.docs.map((d: any) => ({ ...d.data(), docTitle: doc.data().title } as KBChunk));
     });
 
     const chunkResults = await Promise.all(chunkFetchPromises);
@@ -138,7 +138,7 @@ export const KBService = {
 
     // 4. Return top hits
     return sanitize(scoredList
-      .sort((a, b) => b.score - a.score)
+      .sort((a: any, b: any) => b.score - a.score)
       .slice(0, limit) as KBChunk[]);
   },
 
@@ -156,8 +156,13 @@ export const KBService = {
     const docData = { id: docSnap.id, ...docSnap.data() } as KBDocument;
     
     const chunksSnap = await docRef.collection('chunks').get();
-    const chunks = chunksSnap.docs.map(d => ({ id: d.id, ...d.data() } as KBChunk));
+    const chunks = chunksSnap.docs.map((d: any) => ({ id: d.id, ...d.data() } as KBChunk));
     
     return sanitize({ doc: docData, chunks });
+  },
+
+  async getAllDocuments(): Promise<KBDocument[]> {
+    const snap = await accreditationDb.collection('kb_documents').get();
+    return snap.docs.map((d: any) => ({ id: d.id, ...d.data() } as KBDocument));
   }
 };

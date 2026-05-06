@@ -11,13 +11,20 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+export async function generateStaticParams() {
+  const { INITIAL_POLICIES } = await import('@/lib/constants');
+  return INITIAL_POLICIES.map((p) => ({
+    slug: p.slug,
+  }));
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const policy = await PolicyService.getPolicyBySlug(slug);
   return { title: `${policy?.name} Wizard` };
 }
 
-export const dynamic = 'force-dynamic';
+
 export const revalidate = 0;
 
 import { RestorationButtonClient } from '@/components/policies/RestorationButtonClient';

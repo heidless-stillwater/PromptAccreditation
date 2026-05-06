@@ -1,3 +1,15 @@
+export const dynamic = "force-static";
+export async function generateStaticParams() {
+  return [
+    { appId: 'ag-video-system' },
+    { appId: 'prompttool' },
+    { appId: 'promptresources' },
+    { appId: 'promptmasterspa' },
+    { appId: 'promptaccreditation' },
+    { appId: 'plantune' },
+    { appId: 'suiteutils' }
+  ];
+}
 import { NextRequest, NextResponse } from 'next/server';
 import { PolicyService } from '@/lib/services/policy-service';
 

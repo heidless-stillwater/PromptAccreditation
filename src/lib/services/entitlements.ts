@@ -36,7 +36,7 @@ export const EntitlementService = {
   async getAccreditationTier(uid: string): Promise<AccreditationTier> {
     try {
       const { accreditationDb } = await import('../firebase-admin');
-      const userDoc = await withTimeout(accreditationDb.collection('users').doc(uid).get());
+      const userDoc = await withTimeout(accreditationDb.collection('users').doc(uid).get()) as any;
       if (!userDoc.exists) return 'free';
       const data = userDoc.data()!;
 
@@ -88,7 +88,7 @@ export const EntitlementService = {
   },
 
   async getUserData(uid: string) {
-    const doc = await withTimeout(globalDb.collection('users').doc(uid).get());
+    const doc = await withTimeout(globalDb.collection('users').doc(uid).get()) as any;
     if (!doc.exists) return null;
     
     const data = doc.data()!;

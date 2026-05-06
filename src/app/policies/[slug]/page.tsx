@@ -19,6 +19,8 @@ interface Props {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const policy = await PolicyService.getPolicyBySlug(slug);
@@ -31,8 +33,7 @@ export default async function PolicyDetailPage({ params, searchParams }: Props) 
   if (!policy) notFound();
 
   const query = await searchParams;
-  const headerList = await headers();
-  const referer = headerList.get('referer');
+  const referer = null;
   
   const hasDriftedCheck = policy.checks.some(c => c.status !== 'green' && c.status !== 'planned');
   const remediationActive = (policy.status !== 'green' && policy.status !== 'planned') || hasDriftedCheck;

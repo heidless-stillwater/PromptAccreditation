@@ -3,9 +3,8 @@ import { getAuth, GoogleAuthProvider, browserLocalPersistence, setPersistence } 
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  // Using canonical domain to bypass Google Auth 400 redirect_uri_mismatch
-  authDomain: 'heidless-apps-0.firebaseapp.com', 
-  projectId: 'heidless-apps-0',
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,

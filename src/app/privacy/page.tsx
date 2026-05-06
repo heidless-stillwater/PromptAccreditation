@@ -7,6 +7,8 @@ import { AuthService } from '@/lib/services/auth-service';
 import { ProbeService } from '@/lib/services/probe-service';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Privacy Policy | Stillwater SaaS Suite',
   description: 'Official UK GDPR Privacy and Transparency Policy for the Stillwater SaaS Suite.',

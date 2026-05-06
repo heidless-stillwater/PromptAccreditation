@@ -1,6 +1,7 @@
 import { PolicyService } from '@/lib/services/policy-service';
 import CommandCentreClient from './CommandCentreClient';
 
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 

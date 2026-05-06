@@ -55,8 +55,8 @@ export const TicketService = {
         .where('status', 'in', ['open', 'in_progress'])
         .orderBy('createdAt', 'desc')
         .get()
-    );
-    return sanitize(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Ticket)));
+    ) as any;
+    return sanitize(snap.docs.map((d: any) => ({ id: d.id, ...d.data() } as Ticket)));
   },
 
   async getResolvedTickets(): Promise<Ticket[]> {
@@ -67,23 +67,25 @@ export const TicketService = {
         .orderBy('updatedAt', 'desc')
         .limit(20)
         .get()
-    );
-    return sanitize(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Ticket)));
+    ) as any;
+    return sanitize(snap.docs.map((d: any) => ({ id: d.id, ...d.data() } as Ticket)));
   },
 
   async getTicketById(id: string): Promise<Ticket | null> {
-    const doc = await withTimeout(accreditationDb.collection('tickets').doc(id).get());
+    const doc = await withTimeout(accreditationDb.collection('tickets').doc(id).get()) as any;
     if (!doc.exists) return null;
     return sanitize({ id: doc.id, ...doc.data() } as Ticket);
   },
 
   async getTicketsByPolicy(policyId: string): Promise<Ticket[]> {
-    const snap = await accreditationDb
-      .collection('tickets')
-      .where('policyId', '==', policyId)
-      .orderBy('createdAt', 'desc')
-      .get();
-    return sanitize(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Ticket)));
+    const snap = await withTimeout(
+      accreditationDb
+        .collection('tickets')
+        .where('policyId', '==', policyId)
+        .orderBy('createdAt', 'desc')
+        .get()
+    ) as any;
+    return sanitize(snap.docs.map((d: any) => ({ id: d.id, ...d.data() } as Ticket)));
   },
 
   async updateTicketStatus(id: string, status: TicketStatus, actor = 'system'): Promise<void> {
@@ -130,7 +132,7 @@ export const TicketService = {
     ticketId: string,
     entry: Omit<TimelineEntry, 'timestamp'>
   ): Promise<void> {
-    const doc = await accreditationDb.collection('tickets').doc(ticketId).get();
+    const doc = await withTimeout(accreditationDb.collection('tickets').doc(ticketId).get()) as any;
     if (!doc.exists) return;
     const existing: TimelineEntry[] = doc.data()?.timeline || [];
     await accreditationDb.collection('tickets').doc(ticketId).update({
@@ -145,7 +147,7 @@ export const TicketService = {
       .collection('tickets')
       .where('checkId', '==', data.checkId)
       .where('status', 'in', ['open', 'in_progress'])
-      .get();
+      .get() as any;
 
     if (!existing.empty) {
       const ticketId = existing.docs[0].id;
@@ -170,4 +172,9 @@ export const TicketService = {
       details: {},
     });
   },
+
+  async getAllTickets(): Promise<Ticket[]> {
+    const snap = await accreditationDb.collection('tickets').get();
+    return snap.docs.map((d: any) => ({ id: d.id, ...d.data() } as Ticket));
+  }
 };

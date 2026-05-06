@@ -36,15 +36,15 @@ export const PolicyService = {
       .orderBy('category')
       .get();
     
-    const policies = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Policy));
+    const policies = snap.docs.map((d: any) => ({ id: d.id, ...d.data() } as Policy));
     
     // SOVEREIGN_AUTO_SEEDER: Ensure all INITIAL_POLICIES exist in the database
-    const existingSlugs = new Set(policies.map(p => p.slug));
+    const existingSlugs = new Set(policies.map((p: any) => p.slug));
     const missingBaselines = INITIAL_POLICIES.filter(bp => !existingSlugs.has(bp.slug));
     
     if (missingBaselines.length > 0) {
        console.log(`[PolicyService] SOVEREIGN_SEEDER: Found ${missingBaselines.length} missing baseline policies. Syncing to registry...`);
-       await Promise.all(missingBaselines.map(async (bp) => {
+       await Promise.all(missingBaselines.map(async (bp: any) => {
           const docRef = accreditationDb.collection('policies').doc(bp.slug);
           await docRef.set({
              ...bp,
@@ -75,15 +75,15 @@ export const PolicyService = {
          if (checksMismatch || guideMismatch || !p.implementationGuide) {
             console.warn(`[PolicyService] Baseline Mismatch for ${p.slug}: Syncing checks and implementation guide...`);
             
-            const syncedChecks = baseline.checks.map(bc => {
-               const existing = p.checks?.find(ec => ec.id === bc.id);
+            const syncedChecks = baseline.checks.map((bc: any) => {
+               const existing = p.checks?.find((ec: any) => ec.id === bc.id);
                return existing ? { ...bc, status: existing.status, lastChecked: existing.lastChecked } : bc;
             });
 
             // Sync Guide but preserve user progress if IDs match
             // SOVEREIGN_HEALER: Also check for property changes (e.g. automatable)
-            const syncedGuide = baseline.implementationGuide.map(bg => {
-               const existing = p.implementationGuide?.find(eg => eg.id === bg.id);
+            const syncedGuide = baseline.implementationGuide.map((bg: any) => {
+               const existing = p.implementationGuide?.find((eg: any) => eg.id === bg.id);
                const propertyMismatch = existing && (existing.automatable !== bg.automatable || existing.automatedProbeId !== bg.automatedProbeId);
                
                if (existing && !propertyMismatch) {
@@ -101,15 +101,15 @@ export const PolicyService = {
             updatesToPublish.push({ id: p.id, data: { checks: syncedChecks, implementationGuide: syncedGuide } });
          } else {
             // DEEP_PROPERTY_CHECK: Even if lengths match, check for automatable drifts
-            const propertyDrift = baseline.implementationGuide.some(bg => {
-               const existing = p.implementationGuide?.find(eg => eg.id === bg.id);
+            const propertyDrift = baseline.implementationGuide.some((bg: any) => {
+               const existing = p.implementationGuide?.find((eg: any) => eg.id === bg.id);
                return existing && (existing.automatable !== bg.automatable || existing.automatedProbeId !== bg.automatedProbeId);
             });
 
             if (propertyDrift) {
                console.warn(`[PolicyService] Deep Property Drift detected for ${p.slug}: Healing guide...`);
-               const syncedGuide = baseline.implementationGuide.map(bg => {
-                  const existing = p.implementationGuide?.find(eg => eg.id === bg.id);
+               const syncedGuide = baseline.implementationGuide.map((bg: any) => {
+                  const existing = p.implementationGuide?.find((eg: any) => eg.id === bg.id);
                   return existing ? { ...bg, status: existing.status } : bg;
                });
                synchronized = { ...p, implementationGuide: syncedGuide };
@@ -123,8 +123,8 @@ export const PolicyService = {
         const existing = uniqueMap.get(p.slug)!;
         console.log(`[PolicyService] Duplicate Detected: ${p.slug}. Consolidating...`);
         
-        const pPassed = synchronized.checks?.filter(c => c.status === 'green').length || 0;
-        const ePassed = existing.checks?.filter(c => c.status === 'green').length || 0;
+        const pPassed = synchronized.checks?.filter((c: any) => c.status === 'green').length || 0;
+        const ePassed = existing.checks?.filter((c: any) => c.status === 'green').length || 0;
         
         if (p.id === p.slug || pPassed > ePassed) {
            ghotsToPurge.push(existing.id);
@@ -142,10 +142,10 @@ export const PolicyService = {
       (async () => {
          try {
             if (ghotsToPurge.length > 0) {
-               await Promise.all(ghotsToPurge.map(id => accreditationDb.collection('policies').doc(id).delete()));
+               await Promise.all(ghotsToPurge.map((id: string) => accreditationDb.collection('policies').doc(id).delete()));
             }
             if (updatesToPublish.length > 0) {
-               await Promise.all(updatesToPublish.map(({ id, data }) => accreditationDb.collection('policies').doc(id).set(data, { merge: true })));
+               await Promise.all(updatesToPublish.map(({ id, data }: any) => accreditationDb.collection('policies').doc(id).set(data, { merge: true })));
             }
             console.log(`[PolicyService] SOVEREIGN_HEALING: Pruned ${ghotsToPurge.length} ghosts and synced ${updatesToPublish.length} baselines.`);
          } catch (err) {
@@ -183,16 +183,14 @@ export const PolicyService = {
           console.log(`[PolicyService] Healing Registry Mismatch for ${slug}: Re-syncing baseline...`);
           
           // Sync Checks
-          const syncedChecks = baseline.checks.map(bc => {
-             const existing = data.checks?.find(ec => ec.id === bc.id);
-             return existing ? { ...bc, status: existing.status, lastChecked: existing.lastChecked } : bc;
-          });
-
-          // Sync Guide
-          const syncedGuide = baseline.implementationGuide.map(bg => {
-             const existing = data.implementationGuide?.find(eg => eg.id === bg.id);
-             return existing ? { ...bg, status: existing.status } : bg;
-          });
+            const syncedChecks = baseline.checks.map((bc: any) => {
+               const existing = data.checks?.find((ec: any) => ec.id === bc.id);
+               return existing ? { ...bc, status: existing.status, lastChecked: existing.lastChecked } : bc;
+            });
+            const syncedGuide = baseline.implementationGuide.map((bg: any) => {
+               const existing = data.implementationGuide?.find((eg: any) => eg.id === bg.id);
+               return existing ? { ...bg, status: existing.status } : bg;
+            });
 
           data.checks = syncedChecks;
           data.implementationGuide = syncedGuide;
@@ -250,7 +248,7 @@ export const PolicyService = {
 
     const policy = snap.data() as Policy;
     let checkFound = false;
-    const updatedChecks = policy.checks.map((c) => {
+    const updatedChecks = policy.checks.map((c: any) => {
       if (c.id === checkId) {
         checkFound = true;
         return { 
@@ -364,16 +362,16 @@ export const PolicyService = {
 
   calculateAggregateStatus(checks: AuditCheck[]): PolicyStatus {
     if (!checks.length) return 'amber';
-    if (checks.every((c) => c.status === 'green')) return 'green';
-    if (checks.some((c) => c.status === 'red')) return 'red';
+    if (checks.every((c: any) => c.status === 'green')) return 'green';
+    if (checks.some((c: any) => c.status === 'red')) return 'red';
     return 'amber';
   },
 
   async getComplianceScore(): Promise<number> {
     const policies = await this.getAllPolicies();
-    const allChecks = policies.flatMap((p) => p.checks || []);
+    const allChecks = policies.flatMap((p: any) => p.checks || []);
     if (!allChecks.length) return 100;
-    const passed = allChecks.filter((c) => c.status === 'green').length;
+    const passed = allChecks.filter((c: any) => c.status === 'green').length;
     return Math.round((passed / allChecks.length) * 100);
   },
 
@@ -550,15 +548,15 @@ export const PolicyService = {
 
   async getAppComplianceStatus(appId: string) {
     const policies = await this.getAllPolicies();
-    const relevant = policies.filter(p => p.targetApps.includes(appId) || p.targetApps.includes('all'));
-    const failing = relevant.filter(p => p.status === 'red');
-    const totalChecks = relevant.reduce((a, p) => a + (p.checks?.length || 0), 0);
-    const passedChecks = relevant.reduce((a, p) => a + (p.checks?.filter(c => c.status === 'green').length || 0), 0);
+    const relevant = policies.filter((p: any) => p.targetApps.includes(appId) || p.targetApps.includes('all'));
+    const failing = relevant.filter((p: any) => p.status === 'red');
+    const totalChecks = relevant.reduce((a: any, p: any) => a + (p.checks?.length || 0), 0);
+    const passedChecks = relevant.reduce((a: any, p: any) => a + (p.checks?.filter((c: any) => c.status === 'green').length || 0), 0);
     const score = totalChecks > 0 ? Math.round((passedChecks / totalChecks) * 100) : 100;
 
     return {
       passed: failing.length === 0 && score >= 70,
-      failingPolicies: failing.map(p => p.name),
+      failingPolicies: failing.map((p: any) => p.name),
       score,
       lastScan: new Date(),
     };
@@ -783,7 +781,7 @@ Sovereign Sentinel monitors rule parity across all satellite shards.
         else {
            // SOVEREIGN_HEALER: Always attempt to synthesize if it's a known documentation step
            // or if the check is already Green.
-           const check = policy.checks.find(c => c.id === checkId);
+           const check = policy.checks.find((c: any) => c.id === checkId);
            const isDpaPolicy = step.id === 'dpa-step-3';
            const isOsaRisk = step.id === 'osa-step-1';
            const isOsaStrategy = step.id === 'osa-step-2';

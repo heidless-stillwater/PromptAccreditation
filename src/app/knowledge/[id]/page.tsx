@@ -10,6 +10,15 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
+/* 
+export async function generateStaticParams() {
+  const docs = await KBService.getAllDocuments();
+  return docs.map((doc) => ({
+    id: doc.id,
+  }));
+}
+*/
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const data = await KBService.getDocumentWithChunks(id);

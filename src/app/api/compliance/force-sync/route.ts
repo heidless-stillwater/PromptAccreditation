@@ -1,3 +1,4 @@
+export const dynamic = "force-static";
 import { NextResponse } from 'next/server';
 import { AuthService } from '@/lib/services/auth-service';
 import { PolicyService } from '@/lib/services/policy-service';

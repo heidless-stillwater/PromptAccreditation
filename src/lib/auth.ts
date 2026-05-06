@@ -1,4 +1,3 @@
-import { cookies } from 'next/headers';
 import { getAdminAuth, getDb, withTimeout } from './firebase-admin';
 import { EntitlementService } from './services/entitlements';
 
@@ -7,10 +6,12 @@ const EXPIRES_IN = 60 * 60 * 24 * 5 * 1000; // 5 days
 
 export async function createSession(idToken: string) {
   try {
-    const auth = getAdminAuth();
+    const auth = await getAdminAuth();
     if (!auth) throw new Error('Admin Auth unavailable');
 
     const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn: EXPIRES_IN });
+    if (typeof window !== 'undefined') throw new Error('Cannot create session on client');
+    const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
     
     cookieStore.set(SESSION_NAME, sessionCookie, {
@@ -26,7 +27,7 @@ export async function createSession(idToken: string) {
     const { accreditationDb } = await import('./firebase-admin');
     if (!accreditationDb) throw new Error('Accreditation DB unavailable');
 
-    const userSnap = await withTimeout(accreditationDb.collection('users').doc(decodedClaims.uid).get());
+    const userSnap = await withTimeout(accreditationDb.collection('users').doc(decodedClaims.uid).get()) as any;
     const profile = userSnap.data();
 
     return {
@@ -43,18 +44,22 @@ export async function createSession(idToken: string) {
 }
 
 export async function destroySession() {
+  if (typeof window !== 'undefined') return;
+  const { cookies } = await import('next/headers');
   const cookieStore = await cookies();
   cookieStore.delete(SESSION_NAME);
 }
 
 export async function getSessionUser() {
+  if (typeof window !== 'undefined') return null;
+  const { cookies } = await import('next/headers');
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(SESSION_NAME)?.value;
   
   if (!sessionCookie) return null;
   
   try {
-    const auth = getAdminAuth();
+    const auth = await getAdminAuth();
     if (!auth) {
         console.warn('[Auth] getSessionUser: adminAuth unavailable');
         return null;
@@ -63,7 +68,7 @@ export async function getSessionUser() {
     const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
     
     // Fetch extended profile from Named Hub
-    const db = getDb();
+    const db = await getDb();
     if (!db) {
         console.warn('[Auth] getSessionUser: accreditationDb unavailable');
         return {
@@ -75,7 +80,7 @@ export async function getSessionUser() {
         };
     }
 
-    const userSnap = await withTimeout(db.collection('users').doc(decodedClaims.uid).get());
+    const userSnap = await withTimeout(db.collection('users').doc(decodedClaims.uid).get()) as any;
     const profile = userSnap.data();
 
     return {

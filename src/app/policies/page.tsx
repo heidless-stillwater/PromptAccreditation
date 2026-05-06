@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { Shield, Lock, Eye, ChevronRight, AlertTriangle } from 'lucide-react';
-export const dynamic = 'force-dynamic';
+
 import { PolicyService } from '@/lib/services/policy-service';
 import { SyncRegistryButton } from '@/components/policies/sync-registry-button';
 import type { Metadata } from 'next';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Policy Hub',

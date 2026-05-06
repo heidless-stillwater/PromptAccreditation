@@ -1,4 +1,4 @@
-'use server';
+// 'use server';
 
 import { TicketService } from '@/lib/services/ticket-service';
 import { revalidatePath } from 'next/cache';
@@ -17,7 +17,7 @@ export async function addTicketComment(formData: FormData) {
       details: content,
     });
     
-    revalidatePath(`/tickets/${ticketId}`);
+    // revalidatePath(`/tickets/${ticketId}`);
     return { success: true };
   } catch (err) {
     console.error('Failed to add comment:', err);

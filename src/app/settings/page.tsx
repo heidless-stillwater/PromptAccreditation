@@ -1,9 +1,11 @@
-export const dynamic = 'force-dynamic';
+
 import { Settings, Shield, CreditCard, User, Bell, LogOut, ChevronRight, Zap } from 'lucide-react';
 import { getSessionUser } from '@/lib/auth';
 import { EntitlementService } from '@/lib/services/entitlements';
 import { UpgradeButton } from '@/components/shared/upgrade-button';
 import type { Metadata } from 'next';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Settings',

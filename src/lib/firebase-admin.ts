@@ -1,17 +1,19 @@
-import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
-import { getAuth, type Auth } from 'firebase-admin/auth';
-import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 
 /**
  * SOVEREIGN ADMIN INITIALIZATION (Anti-Deadlock Edition)
  */
 
-let adminApp: App | null = null;
-const dbCache: Record<string, Firestore> = {};
+let adminApp: any = null;
+const dbCache: Record<string, any> = {};
 
-function initAdmin(): App | null {
+function initAdmin(): any {
   if (typeof window !== 'undefined') return null;
+  console.log('[FirebaseAdmin] initAdmin starting... (adminApp exists:', !!adminApp, 'apps length:', getApps().length, ')');
   if (adminApp) return adminApp;
+  
   const apps = getApps();
   if (apps.length > 0) { adminApp = apps[0]; return adminApp; }
 
@@ -19,14 +21,24 @@ function initAdmin(): App | null {
   const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
   let privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
 
-  if (!projectId || !privateKey || !clientEmail) return null;
-
   try {
-    const formattedKey = privateKey.replace(/\\n/g, '\n').replace(/^["']|["']$/g, '').trim();
-    adminApp = initializeApp({ credential: cert({ projectId, clientEmail, privateKey: formattedKey }) });
+    if (projectId && clientEmail && privateKey) {
+      console.log('[FirebaseAdmin] Handshake: Initializing with Explicit Service Account');
+      const formattedKey = privateKey.replace(/\\n/g, '\n').replace(/^["']|["']$/g, '').trim();
+      adminApp = initializeApp({ 
+        credential: cert({ projectId, clientEmail, privateKey: formattedKey }),
+        projectId // Explicit project ID helps with multi-tenant isolation
+      });
+    } else {
+      console.log('[FirebaseAdmin] Handshake: Initializing with Zero-Config (ADC)');
+      adminApp = initializeApp();
+    }
     return adminApp;
   } catch (error: any) {
     console.error('[FirebaseAdmin] Handshake_CRASH:', error.message);
+    // Final fallback: check if it was already initialized in a race condition
+    const currentApps = getApps();
+    if (currentApps.length > 0) return currentApps[0];
     return null;
   }
 }
@@ -34,16 +46,18 @@ function initAdmin(): App | null {
 /**
  * COMPATIBILITY GETTERS
  */
-export function getAdminAuth(): Auth | null {
+export function getAdminAuth(): any {
   const app = initAdmin();
-  return app ? getAuth(app) : null;
+  if (!app) return null;
+  return getAuth(app);
 }
 
-export function getDb(name?: string): Firestore | null {
+export function getDb(name?: string): any {
   const app = initAdmin();
   if (!app) return null;
   const targetDb = name || process.env.FIREBASE_DATABASE_ID || 'promptaccreditation-db-0';
   if (dbCache[targetDb]) return dbCache[targetDb];
+  
   try {
     const db = (targetDb === '(default)') ? getFirestore(app) : getFirestore(app, targetDb);
     try { (db as any).settings({ ignoreUndefinedProperties: true }); } catch (e) {}
@@ -87,7 +101,7 @@ function createRecursiveProxy(target: any): any {
 }
 
 const createLazyDb = (name: string) => {
-    return new Proxy({} as Firestore, {
+    return new Proxy({} as any, {
         get(_, prop: string) {
             const db = getDb(name);
             if (!db) {
@@ -112,7 +126,7 @@ export const resourcesDb = createLazyDb('promptresources-db-0');
 export const masterDb = createLazyDb('prompttool-db-0');
 export const toolDb = masterDb;
 
-export const adminAuth = new Proxy({} as Auth, {
+export const adminAuth = new Proxy({} as any, {
     get(_, prop: string) {
         const auth = getAdminAuth();
         if (!auth) throw new Error('Auth unavailable');

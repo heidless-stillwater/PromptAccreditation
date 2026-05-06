@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     syncInProgress.current = true;
     lastSyncTime.current = now;
     
-    console.log('[Auth-V2] Synchronizing session for:', firebaseUser.email);
+    console.log('[Auth-V2] Synchronizing session for:', firebaseUser.email, 'Current state:', { syncInProgress: syncInProgress.current, lastSync: now - lastSyncTime.current });
     try {
       // Use cached token unless expired. Forced refresh can trigger auth state loops.
       const idToken = await firebaseUser.getIdToken(); 
@@ -145,17 +145,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthInitialized(true);
     });
 
+    // Polling timer disabled to prevent loops during 500 errors
+    /*
     const pollTimer = setInterval(() => {
         if (!userRef.current && auth.currentUser) {
             syncSession(auth.currentUser);
         }
     }, 5000);
+    */
 
     checkRedirect();
 
     return () => {
         unsubscribe();
-        clearInterval(pollTimer);
+        // clearInterval(pollTimer);
     };
   }, [syncSession, authInitialized]);
 

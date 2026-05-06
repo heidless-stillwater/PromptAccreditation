@@ -23,7 +23,7 @@ export const AuditService = {
       .orderBy('timestamp', 'desc')
       .limit(limit)
       .get();
-    return snap.docs.map((d) => {
+    return snap.docs.map((d: any) => {
       const data = d.data();
       const timestamp = data.timestamp?.toDate ? data.timestamp.toDate() : data.timestamp;
       return { id: d.id, ...data, timestamp } as AuditLogEntry;
@@ -44,13 +44,13 @@ export const AuditService = {
       .get();
     
     return snap.docs
-      .map((d) => {
+      .map((d: any) => {
         const data = d.data();
         // Serialization Fix: Convert Firestore Timestamp class to serializable Date
         const timestamp = data.timestamp?.toDate ? data.timestamp.toDate() : data.timestamp;
         return { id: d.id, ...data, timestamp } as AuditLogEntry;
       })
-      .sort((a, b) => {
+      .sort((a: any, b: any) => {
         const timeA = a.timestamp instanceof Date ? a.timestamp.getTime() : 0;
         const timeB = b.timestamp instanceof Date ? b.timestamp.getTime() : 0;
         return timeB - timeA;
@@ -67,7 +67,7 @@ export const AuditService = {
       .where('timestamp', '<=', endDate)
       .orderBy('timestamp', 'asc')
       .get();
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as AuditLogEntry));
+    return snap.docs.map((d: any) => ({ id: d.id, ...d.data() } as AuditLogEntry));
   },
   /**
    * Fetch the content of our persistent shadow log.

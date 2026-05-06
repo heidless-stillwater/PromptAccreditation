@@ -39,14 +39,9 @@ function LoginContent() {
     setLoading(true);
     setError(null);
     try {
-      const isLive = window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
-      if (isLive && !usePopup) {
-        await signInWithRedirect(auth, googleProvider);
-      } else {
-        const result = await signInWithPopup(auth, googleProvider);
-        console.log('[Auth-V2] Popup Success. Manual Syncing...');
-        await syncSession(result.user);
-      }
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log('[Auth-V2] Popup Success. Manual Syncing...');
+      await syncSession(result.user);
     } catch (err: any) {
       console.error('[Auth-V2] Login Error:', err);
       setError(err.message || 'Login failed');
@@ -103,7 +98,7 @@ function LoginContent() {
         )}
         
         <button
-          onClick={() => handleLogin(true)}
+          onClick={() => handleLogin(false)}
           disabled={loading}
           className="btn-primary w-full py-3 flex items-center justify-center gap-3 text-base"
         >

@@ -1,6 +1,8 @@
-export const dynamic = 'force-dynamic';
+
 import { accreditationDb } from '@/lib/firebase-admin';
 import { AuditLogEntry } from '@/lib/types';
+
+export const dynamic = 'force-dynamic';
 import { format } from 'date-fns';
 import { Search, ShieldAlert, FileText, User, Tag, Clock } from 'lucide-react';
 
@@ -11,7 +13,7 @@ async function getAuditLogs(): Promise<AuditLogEntry[]> {
     .limit(100)
     .get();
 
-  return snap.docs.map(doc => {
+  return snap.docs.map((doc: any) => {
     const data = doc.data();
     return {
       id: doc.id,

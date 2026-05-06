@@ -1,6 +1,8 @@
-export const dynamic = 'force-dynamic';
+
 import { accreditationDb } from '@/lib/firebase-admin';
 import { Ticket, Policy, AppHealthStatus } from '@/lib/types';
+
+export const dynamic = 'force-dynamic';
 import { 
   BarChart3, 
   ShieldCheck, 
@@ -18,14 +20,15 @@ async function getDashboardData() {
     accreditationDb.collection('policies').get(),
   ]);
 
-  const tickets = ticketsSnap.docs.map(d => d.data() as Ticket);
-  const policies = policiesSnap.docs.map(d => d.data() as Policy);
+  const tickets = ticketsSnap.docs.map((d: any) => d.data() as Ticket);
+  const policies = policiesSnap.docs.map((d: any) => d.data() as Policy);
 
-  const openTickets = tickets.filter(t => t.status !== 'resolved').length;
-  const criticalTickets = tickets.filter(t => t.priority === 'critical' && t.status !== 'resolved').length;
+  const openTickets = tickets.filter((t: Ticket) => t.status !== 'resolved').length;
+  const criticalTickets = tickets.filter((t: Ticket) => t.priority === 'critical' && t.status !== 'resolved').length;
   
   // Calculate a simplified compliance score
-  const compliantPolicies = policies.filter(p => p.status === 'green').length;
+  const compliantPolicies = policies.filter((p: Policy) => p.status === 'green').length;
+  const failingPolicies = policies.filter((p: any) => p.status === 'red').length;
   const totalPolicies = policies.length || 1;
   const complianceScore = Math.round((compliantPolicies / totalPolicies) * 100);
 

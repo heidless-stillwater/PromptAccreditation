@@ -1,9 +1,11 @@
 import { BookOpen, FileText, Plus } from 'lucide-react';
-export const dynamic = 'force-dynamic';
+
 import { accreditationDb } from '@/lib/firebase-admin';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import type { KBDocument } from '@/lib/types';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Knowledge Base',
@@ -16,7 +18,7 @@ async function getDocuments(): Promise<KBDocument[]> {
       .collection('kb_documents')
       .orderBy('uploadedAt', 'desc')
       .get();
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as KBDocument));
+    return snap.docs.map((d: any) => ({ id: d.id, ...d.data() } as KBDocument));
   } catch {
     return [];
   }

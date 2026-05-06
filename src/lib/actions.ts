@@ -1,4 +1,4 @@
-'use server';
+// 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { PolicyService } from './services/policy-service';
@@ -24,9 +24,9 @@ export async function scanSuiteForDrifts() {
   }
   try {
     const result = await MonitoringService.scanForDrifts();
-    revalidatePath('/');
-    revalidatePath('/tickets');
-    revalidatePath('/monitoring');
+    // revalidatePath('/');
+    // revalidatePath('/tickets');
+    // revalidatePath('/monitoring');
     return { success: true, ...result };
   } catch (error: unknown) {
     return { success: false, message: error instanceof Error ? error.message : String(error) };
@@ -45,8 +45,8 @@ export async function triggerDriftAuditAction(policySlug: string) {
       issue.toLowerCase().includes(policySlug.replace(/-/g, ' ').toLowerCase())
     );
 
-    revalidatePath(`/policies/${policySlug}/wizard`);
-    revalidatePath('/');
+    // revalidatePath(`/policies/${policySlug}/wizard`);
+    // revalidatePath('/');
 
     if (policyIssues.length > 0) {
       return { 
@@ -71,8 +71,8 @@ export async function triggerDriftAuditAction(policySlug: string) {
 export async function setPolicyIntensity(policyId: string, intensity: IntensityLevel) {
   try {
     await PolicyService.updatePolicyIntensity(policyId, intensity);
-    revalidatePath('/');
-    revalidatePath(`/policies/${policyId}`);
+    // revalidatePath('/');
+    // revalidatePath(`/policies/${policyId}`);
     return { success: true };
   } catch (error: unknown) {
     return { success: false, message: error instanceof Error ? error.message : String(error) };
@@ -110,9 +110,9 @@ export async function updateCheckStatus(
        console.log(`[Actions] Final_Accreditation_Locked: ${slug}`);
     }
 
-    revalidatePath('/policies/[slug]/wizard');
-    revalidatePath('/policies');
-    revalidatePath('/');
+    // revalidatePath('/policies/[slug]/wizard');
+    // revalidatePath('/policies');
+    // revalidatePath('/');
     
     return { success: true };
   } catch (error: unknown) {
@@ -134,8 +134,8 @@ export async function certifyCheckAction(policyId: string, checkId: string) {
       targetId: checkId,
       details: { policyId, status: 'green', certificationType: 'user_sign_off' }
     });
-    revalidatePath(`/policies/${policyId}`);
-    revalidatePath('/');
+    // revalidatePath(`/policies/${policyId}`);
+    // revalidatePath('/');
     return { success: true };
   } catch (error: unknown) {
     return { success: false, message: error instanceof Error ? error.message : String(error) };
@@ -196,9 +196,9 @@ export async function remediatePolicyAction(policySlug: string) {
     // 5. Forcefully restore policy to green in the registry
     await PolicyService.updatePolicyStatus(policy.id, 'green', 'Sovereign_Auto_Remediation_Triggered');
 
-    revalidatePath(`/policies/${policySlug}`);
-    revalidatePath(`/policies/${policySlug}/wizard`);
-    revalidatePath('/');
+    // revalidatePath(`/policies/${policySlug}`);
+    // revalidatePath(`/policies/${policySlug}/wizard`);
+    // revalidatePath('/');
 
     return { 
       success: true, 
@@ -233,9 +233,9 @@ export async function completeManualStepAction(
     await PS.updateCheckStatus(policySlug, registryCheckId, 'green', evidenceUrl, user.email);
     await AccreditationFlow.persistStepCompletion(user.uid, policySlug, stepId);
 
-    revalidatePath('/policies/[slug]/wizard');
-    revalidatePath('/policies');
-    revalidatePath('/');
+    // revalidatePath('/policies/[slug]/wizard');
+    // revalidatePath('/policies');
+    // revalidatePath('/');
     
     return { success: true };
   } catch (error: any) {
@@ -317,8 +317,8 @@ export async function triggerActiveFix(ticketId: string, fixId?: string) {
           });
         }
         
-        revalidatePath('/tickets');
-        revalidatePath(`/tickets/${ticketId}`);
+        // revalidatePath('/tickets');
+        // revalidatePath(`/tickets/${ticketId}`);
         return result;
       }
     }
@@ -348,9 +348,9 @@ export async function resolveTicketManually(
       notes,
       resolvedBy,
     });
-    revalidatePath('/tickets');
-    revalidatePath(`/tickets/${ticketId}`);
-    revalidatePath('/');
+    // revalidatePath('/tickets');
+    // revalidatePath(`/tickets/${ticketId}`);
+    // revalidatePath('/');
     return { success: true };
   } catch (error: unknown) {
     return { success: false, message: error instanceof Error ? error.message : String(error) };
@@ -370,9 +370,9 @@ export async function resetWizardAction(policyId: string) {
     // Deep Reset: Clear the checks and status in the policy registry
     await PolicyService.resetPolicyState(slug, user.uid);
 
-    revalidatePath(`/policies/${slug}/wizard`);
-    revalidatePath(`/policies/${slug}`);
-    revalidatePath('/');
+    // revalidatePath(`/policies/${slug}/wizard`);
+    // revalidatePath(`/policies/${slug}`);
+    // revalidatePath('/');
 
     return { success: true };
   } catch (error: unknown) {
@@ -415,7 +415,7 @@ export async function completeWizardStep(
     
     await PolicyService.updateCheckStatus(slug, checkId, 'green', evidenceUrl, userId);
     
-    revalidatePath(`/policies/${slug}/wizard`);
+    // revalidatePath(`/policies/${slug}/wizard`);
     return { success: true };
   } catch (error: any) {
     return { success: false, message: error.message };
@@ -427,7 +427,7 @@ export async function skipWizardStep(policyId: string, userId: string, stepId: s
     const policy = await PolicyService.getPolicyById(policyId) || await PolicyService.getPolicyBySlug(policyId);
     const slug = policy?.slug || policyId;
     await PolicyService.skipWizardStep(slug, userId, stepId);
-    revalidatePath(`/policies/${slug}/wizard`);
+    // revalidatePath(`/policies/${slug}/wizard`);
     return { success: true };
   } catch (error: any) {
     return { success: false, message: error.message };
@@ -545,7 +545,7 @@ export async function uploadKBDocument(title: string, category: PolicyCategory, 
 
   try {
     const docId = await KBService.chunkAndEmbed(title, content, category, user.email || user.uid);
-    revalidatePath('/knowledge');
+    // revalidatePath('/knowledge');
     return { success: true, docId };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -558,8 +558,8 @@ export async function deleteTicketAction(ticketId: string) {
 
   try {
     await TicketService.deleteTicket(ticketId, user.email || user.uid);
-    revalidatePath('/tickets');
-    revalidatePath('/');
+    // revalidatePath('/tickets');
+    // revalidatePath('/');
     return { success: true };
   } catch (error: any) {
     return { success: false, message: error.message };

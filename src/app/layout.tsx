@@ -1,8 +1,13 @@
 import './globals.css';
-import { Inter, Outfit } from 'next/font/google';
+// import { Inter, Outfit } from 'next/font/google';
 import { Sidebar } from '@/components/layout/sidebar';
 import { AuthProvider } from '@/providers/auth-provider';
 
+// Temporary system font fallbacks to bypass build-time network failures
+const inter = { variable: 'font-inter', className: 'font-inter' };
+const outfit = { variable: 'font-outfit', className: 'font-outfit' };
+
+/*
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
@@ -14,13 +19,14 @@ const outfit = Outfit({
   variable: '--font-outfit',
   display: 'swap',
 });
+*/
 
 export const metadata = {
   title: 'PromptAccreditation | Sovereign Dashboard',
   description: 'Autonomous Regulatory Compliance Governance for the Prompt App Suite',
 };
 
-export const dynamic = 'force-dynamic';
+
 
 export default function RootLayout({
   children,

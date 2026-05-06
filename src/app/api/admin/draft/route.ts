@@ -1,3 +1,4 @@
+export const dynamic = "force-static";
 import { NextRequest, NextResponse } from 'next/server';
 import { DocDraftingService } from '@/lib/services/doc-drafting-service';
 import { getSessionUser } from '@/lib/auth';

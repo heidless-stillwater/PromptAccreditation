@@ -1,9 +1,9 @@
 {
   "projects": {
-    "default": "heidless-apps-0"
+    "default": "heidless-apps-2"
   },
   "targets": {
-    "heidless-apps-0": {
+    "heidless-apps-2": {
       "hosting": {
         "promptaccreditation-v0": [
           "promptaccreditation-v0"
